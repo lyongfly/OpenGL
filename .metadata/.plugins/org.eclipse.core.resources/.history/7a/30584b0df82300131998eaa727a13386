@@ -1,0 +1,407 @@
+
+package com.suryani.activity.cart;
+
+import com.quidsi.activity.CartButtonEnabledActivity;
+import com.quidsi.activity.NavigationActivity;
+import com.suryani.R;
+import com.suryani.activity.LoginActivity;
+import com.suryani.activity.MyAccountActivity;
+import com.suryani.babyregistry.util.BabyRegistryUtil;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.CustomerAddress;
+import com.suryani.model.ResponseResult;
+import com.suryani.util.Config;
+import com.suryani.util.DialogUtil;
+import com.suryani.volley.executor.factory.ExecutorFactory;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
+import android.widget.Button;
+import android.widget.EditText;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class CreateCustomerAddressActivity extends NavigationActivity {
+
+    protected final int CUSTOMER_ADDRESS = 0;
+    protected static HashMap<String, String> map;
+
+    protected Button addAddresssButton;
+    protected EditText etName, etAdd1, etAdd2, etCity, etState, etCode, etPhone;
+    protected int requestCode;
+    protected Intent intent;
+    protected boolean isToEdit;
+    protected CustomerAddress address;
+    protected boolean isDoTask_card = false;
+    protected boolean isFromCart, isFromPayment;
+    
+    protected boolean isCheckAboutYou,isAddNewAddress,isFromMyaccount;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getLayoutInflater().inflate(R.layout.new_customer_address, mMainLayout);
+
+        intent = getIntent();
+        requestCode = intent.getIntExtra("requestCode", 0);
+        isFromPayment = intent.getBooleanExtra("isFromPayment", false);
+        isFromCart = intent.getBooleanExtra("isFromCartPage", false) || isFromPayment;
+        isFromMyaccount = intent.getBooleanExtra("isFromMyaccount", false);
+        actionBar.setTitle(R.string.add_address);
+        
+        etName = (EditText) findViewById(R.id.customerName);
+        etAdd1 = (EditText) findViewById(R.id.customerAddress1);
+        etAdd2 = (EditText) findViewById(R.id.customerAddress2);
+        etCity = (EditText) findViewById(R.id.customerCity);
+        etState = (EditText) findViewById(R.id.customerState);
+        etCode = (EditText) findViewById(R.id.customerZipCode);
+        etPhone = (EditText) findViewById(R.id.customerPhone);
+        etPhone.setOnFocusChangeListener(new OnFocusChangeListener() {
+
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+               
+                if (!hasFocus) {
+                    String phoneNumber = ((EditText) v).getText().toString();
+                    if (phoneNumber.length() == 10) {
+                        ((EditText) v).setText(getStringWithType(phoneNumber));
+                    }
+                }
+            }
+        });
+        addAddresssButton = (Button) findViewById(R.id.addAddress);
+
+        if (map != null && map.size() != 0) {
+
+            etName.setText(map.get("name"));
+            etAdd1.setText(map.get("add1"));
+            etAdd2.setText(map.get("add2"));
+            etCity.setText(map.get("city"));
+            etState.setText(map.get("state"));
+            etCode.setText(map.get("zipcode"));
+
+            String numberOnly = getStringNumber(map.get("phone"));
+            etPhone.setText(getStringWithType(numberOnly));
+
+            map.clear();
+        }
+
+        isToEdit = intent.getBooleanExtra("isToEdit", false);
+        if (isToEdit) {
+            address = (CustomerAddress) intent.getSerializableExtra("address");
+            actionBar.setTitle(R.string.edit_address);
+            etName.setText(address.Name);
+            etAdd1.setText(address.Addressline1);
+            etAdd2.setText(address.Addressline2);
+            etCity.setText(address.City);
+            etState.setText(address.State);
+            etCode.setText(address.Zipcode);
+
+            String numberOnly = getStringNumber(address.PhoneNumber);
+            etPhone.setText(getStringWithType(numberOnly));
+
+            if ("B".equals(address.AddressType))
+                requestCode = CreateCardActivity.BILLING_ADDRESS;
+
+            addAddresssButton.setText("Save Address");
+        }
+
+        addAddresssButton.setOnClickListener(addAddressListener);
+    }
+
+    // add shipping address
+    public OnClickListener addAddressListener = new OnClickListener() {
+
+        @Override
+        public void onClick(View v) {
+            if (!Config.isDebug)
+            {
+                if (etName.getText().toString() == null || etName.getText().toString().equals(""))
+                {
+
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.enterfirstandlast);
+                    return;
+                }
+
+                try {
+                    Pattern pn = Pattern.compile("[A-Za-z\\ \\-\\.\\']+{1,31}");
+                    Matcher ma2 = pn.matcher(etName.getText().toString());
+                    if (!ma2.matches()) {
+
+                        DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                                R.string.firstandlast_name_incorrect);
+                        return;
+                    }
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+                if (etAdd1.getText().toString() == null || etAdd1.getText().toString().equals(""))
+                {
+
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.addressshouldnotbeempty);
+                    return;
+                }
+                if (etCity.getText().toString() == null || etCity.getText().toString().equals(""))
+                {
+
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.cityshouldontbeempty);
+                    return;
+                }
+                if (etState.getText().toString() == null || etState.getText().toString().equals(""))
+                {
+
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.stateshouldnotbeempty);
+                    return;
+                }
+                if (etCode.getText().toString() == null || etCode.getText().toString().equals("")
+                        || etCode.getText().toString().trim().length() != 5)
+                {
+
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.enterzipcode);
+                    return;
+                }
+                if (etPhone.getText().toString() == null || etPhone.getText().toString().equals(""))
+                {
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.inputcorectphone);
+                    return;
+                }
+
+                Pattern p = Pattern.compile("^[2-9][0-9]{9}");
+                Matcher ma = p.matcher(etPhone.getText().toString());
+                Pattern p1 = Pattern.compile("^\\([2-9][0-9]{2}\\)[0-9]{3}-[0-9]{4}");
+                Matcher ma1 = p1.matcher(etPhone.getText().toString());
+                if (!ma.matches() && !ma1.matches()) {
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            R.string.inputcorectphone);
+                    return;
+
+                }
+
+            }
+            if (map == null)
+                map = new HashMap<String, String>();
+            else
+                map.clear();
+
+            map.put("name", etName.getText().toString());
+            map.put("add1", etAdd1.getText().toString());
+            map.put("add2", etAdd2.getText().toString());
+            map.put("city", etCity.getText().toString());
+            map.put("state", etState.getText().toString().toUpperCase(Locale.US));
+            map.put("zipcode", etCode.getText().toString());
+
+            String phoneString = etPhone.getText().toString();
+            if (phoneString.length() > 10) {
+                phoneString = getStringNumber(phoneString);
+            }
+
+            map.put("phone", phoneString);
+
+            if (requestCode == CreateCardActivity.BILLING_ADDRESS)
+                map.put("addresstype", "B");
+            else
+                map.put("addresstype", "S");
+
+            chooseAction();
+        }
+
+        
+    };
+   
+    protected void chooseAction() {
+        int flag = 0;
+        if (isToEdit) {
+            if (requestCode == CreateCardActivity.BILLING_ADDRESS)
+                flag = Config.TASK_CUSTOMER_EDIT_BILLING_ADDRESS;
+            else
+                flag = Config.TASK_CUSTOMER_EDIT_ADDRESS;
+
+            map.put("addressId", address.AddressId);
+
+        } else
+            flag = Config.TASK_CUSTOMER_ADD_ADDRESS;
+
+        Task task = new Task(flag, map);
+        task.setExcutor(ExecutorFactory.createUpdateAddressExecutor(flag));
+        MainService.addNewTask(task,this);
+        showProgress();
+    }
+    // get number from string by Rex
+    public static String getStringNumber(String str) {
+        StringBuffer sb = new StringBuffer();
+        if (str != null && str.length() != 0) {
+            char[] strChar = str.toCharArray();
+            for (char c : strChar) {
+                if (Character.isDigit(c)) {
+                    sb.append(c);
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    // change phone to like as (222)222-2222 by Rex
+    public static String getStringWithType(String str) {
+        StringBuffer sb = new StringBuffer(str);
+        if (str != null && str.length() != 0) {
+            sb.insert(0, "(");
+            sb.insert(4, ")");
+            sb.insert(8, "-");
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void refresh(Object... param) {
+        dismissProgress();
+        int flag = (Integer) param[0];
+
+        ResponseResult result = (ResponseResult) param[1];
+        if (result == null) {
+            return;
+        }
+        if (result.Action != null && (Integer.parseInt(result.Action) == Config.RESULT_FAIL))
+        {
+
+            DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                    result.Message);
+
+        }
+        if (result.ErrorCode != null)
+        {
+
+            if ("LoginRequired".equalsIgnoreCase(result.ErrorCode)) {
+                
+                int aimFlag = LoginActivity.FROM_HELP_CENTER_FLAG;
+                if (isFromCart) {
+                    aimFlag = LoginActivity.FROM_CART_FLAG;
+                } else if(isCheckAboutYou||isAddNewAddress){
+                    aimFlag = LoginActivity.TO_BABY_REGISTRY;
+                }
+                
+                this.gotoLoginPage(aimFlag);
+                
+            } else {
+                DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                        result.ErrorMessage);
+                return;
+            }
+
+        }
+        if (result.Action != null && (Integer.parseInt(result.Action) == Config.RESULT_OK))
+        {
+
+            actionByFlag(flag, result);
+        }
+
+    }
+
+    protected void actionByFlag(int flag, ResponseResult result) {
+        switch (flag)
+        {
+            case Config.TASK_ADD_CREDITECARD:
+                Intent intent0 = new Intent(CreateCustomerAddressActivity.this,
+                        CreateCardActivity.class);
+                setResult(88, intent0);
+                finish();
+                map.clear();
+                break;
+            case Config.TASK_CUSTOMER_ADD_ADDRESS:
+                if (requestCode == CUSTOMER_ADDRESS) {
+                    Intent toCustomerInfo = new Intent(this, isFromPayment ? ReviewListActivity.class : CustomerInfoActivity.class);
+                    toCustomerInfo.putExtra("addressId", result.Message);
+                    toCustomerInfo.putExtra("isToPayment", isFromPayment);
+                    DialogUtil.OneButtonShowMessageDialog(CreateCustomerAddressActivity.this,
+                            Config.TASK_CUSTOMER_ADD_ADDRESS, toCustomerInfo,
+                            R.string.add_address_success);
+                    BabyRegistryUtil.setCount(1);
+                    map.clear();
+
+                } else if (requestCode == CreateCardActivity.BILLING_ADDRESS) {
+
+                    CustomerAddress addr = new CustomerAddress(map);
+                    addr.AddressId = result.Message;
+
+                    Intent intent = new Intent(CreateCustomerAddressActivity.this,
+                            NewCreateCardActivity.class);
+                    intent.putExtra("CustomerAddress", addr);
+                    setResult(Config.TASK_CUSTOMER_ADD_ADDRESS, intent);
+                    finish();
+                    map.clear();
+                    isDoTask_card = true;
+                }
+                break;
+            case Config.TASK_CUSTOMER_EDIT_BILLING_ADDRESS:
+                CustomerAddress addr = new CustomerAddress(map);
+                addr.AddressId = result.Message;
+                addr.position = address.position;
+                addr.AddressType = address.AddressType;
+                addr.selected = address.selected;
+                Intent intent = new Intent(CreateCustomerAddressActivity.this,
+                        NewCreateCardActivity.class);
+                intent.putExtra("CustomerAddress", addr);
+                setResult(Config.TASK_CUSTOMER_EDIT_BILLING_ADDRESS, intent);
+                finish();
+                map.clear();
+                break;
+            case Config.TASK_CUSTOMER_EDIT_ADDRESS:
+
+                if (this.intent.getBooleanExtra("isFromNewCreditCard", false)) {
+                    CustomerAddress addr1 = new CustomerAddress(map);
+                    addr1.AddressId = result.Message;
+                    addr1.position = address.position;
+                    addr1.AddressType = address.AddressType;
+                    addr1.selected = address.selected;
+                    Intent intent1 = new Intent(CreateCustomerAddressActivity.this,
+                            NewCreateCardActivity.class);
+                    intent1.putExtra("CustomerAddress", addr1);
+                    setResult(Config.TASK_CUSTOMER_EDIT_ADDRESS, intent1);
+                    finish();
+                    map.clear();
+                } else {
+                    intent0 = new Intent(CreateCustomerAddressActivity.this,
+                            CustomerInfoActivity.class);
+                    this.setResult(98, intent0);
+                    finish();
+                    map.clear();
+                }
+
+                break;
+            case Config.TASK_EDIT_CREDITECARD:
+
+                DialogUtil.ToastShow(CreateCustomerAddressActivity.this,
+                        R.string.edit_card_success);
+                intent0 = new Intent(CreateCustomerAddressActivity.this,
+                        MyAccountActivity.class);
+                intent0.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                intent0.putExtra("isFromCustomer", true);
+                startActivity(intent0);
+                finish();
+                map.clear();
+                break;
+            default:
+                break;
+        }
+    }
+
+}

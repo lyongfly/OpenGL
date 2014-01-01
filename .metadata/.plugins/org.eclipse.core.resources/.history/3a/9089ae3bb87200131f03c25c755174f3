@@ -1,0 +1,31 @@
+
+package com.lyong.opengl;
+
+import android.app.Activity;
+import android.opengl.GLSurfaceView;
+import android.os.Bundle;
+import android.view.Menu;
+
+import com.lyong.opengl.renderer.MyPointerRenderer;
+import com.lyong.opengl.view.MyGLSurfaceView;
+
+public class MainActivity extends Activity {
+
+    private MyPointerRenderer myPointRenderer;
+    private MyGLSurfaceView myGlSurfaceView;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        myGlSurfaceView = new MyGLSurfaceView(this);
+        myPointRenderer = new MyPointerRenderer();
+        
+        myGlSurfaceView.setRenderer(myPointRenderer);
+        //GLSurfaceView.RENDERMODE_CONTINUOUSLY 持续渲染（默认）
+        //GLSurfaceView.RENDERMODE_WHEN_DIRTY 脏渲染，命令渲染
+        myGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        setContentView(myGlSurfaceView);
+    }
+
+}

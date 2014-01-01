@@ -1,0 +1,234 @@
+
+package com.suryani.activity.pdp;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.suryani.R;
+import com.suryani.R.color;
+import com.suryani.activity.BaseActivity;
+import com.suryani.activity.NewMyListActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.Ecoupon;
+import com.suryani.model.MyListItem;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.TodayPromotionMessage;
+import com.suryani.response.ProductDetailOption;
+import com.suryani.util.Config;
+import com.suryani.util.DialogUtil;
+import com.suryani.volley.executor.impl.pdp.ApplyECouponCodeExecutor;
+
+public class EcouponIntroActivity extends BaseActivity {
+
+    public static String promotionCode;
+    public static boolean isPromoCodecopied;
+
+    private TextView ecouponTitle, date_text, ecouponContent, enterCodeCopyText, 
+    	enterCodeText, presubtitle_text, pretitle_text;
+    private Button activateButton;
+    private int listIndex;
+    boolean isFromPDP, isFromNewMyList, isSpecialOffer;
+    private Ecoupon ecoupon;
+    private String ecouponCode;
+    private MyListItem mylistitem;
+
+   
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+    	requestWindowFeature(Window.FEATURE_NO_TITLE);
+    	super.onCreate(savedInstanceState);
+    	setContentView(R.layout.ecoupon_intro);
+        if(Build.VERSION.SDK_INT < 14 && actionBar != null) {
+        	actionBar.hide();
+        }
+
+        LinearLayout layout = (LinearLayout) findViewById(R.id.ecoupon_intro_layout);
+        layout.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
+
+        date_text = (TextView) findViewById(R.id.date_text);
+        ecouponTitle = (TextView) findViewById(R.id.intro_title);
+        ecouponContent = (TextView) findViewById(R.id.intro_content);
+        enterCodeCopyText = (TextView) findViewById(R.id.enter_code_copy);
+        activateButton = (Button) findViewById(R.id.ecoupon_btn);
+        enterCodeText = (TextView) findViewById(R.id.enter_code_text);
+        pretitle_text = (TextView) findViewById(R.id.pretitle_text);
+        presubtitle_text = (TextView) findViewById(R.id.presubtitle_text);
+        Intent intent = getIntent();
+        isFromPDP = intent.getBooleanExtra("isFromPDP", false);
+        isSpecialOffer = intent.getBooleanExtra("isSpecialOffer", false);
+        isFromNewMyList = intent.getBooleanExtra("isFromNewMyList", false);
+        activateButton.setText("Tap to add eCoupon");
+        // from product detail page ecoupon item
+
+        Map<TextView, String> map = new HashMap<TextView, String>();
+
+        if (isFromPDP) {
+            /**
+             * ECouponCode ExpiredTime OfferdetailTitle PreviewSubTitle
+             * 
+             */
+            // codegreen
+            ecoupon = (Ecoupon) intent.getSerializableExtra("ecoupon");
+            ecouponCode = ecoupon.ECouponCode;
+
+            map.put(ecouponTitle, ecoupon.ECouponDesc);
+            map.put(date_text, ecoupon.ExpiredTime);
+            map.put(pretitle_text, ecoupon.OfferdetailTitle);
+            map.put(presubtitle_text, ecoupon.OfferdetailSubTitle);
+            map.put(ecouponContent, ecoupon.OfferdetailDescription);
+
+            enterCodeCopyText.setVisibility(View.GONE);
+            enterCodeText.setVisibility(View.GONE);
+            activateButton.setVisibility(View.VISIBLE);
+        } else if (isSpecialOffer) {
+            String PromotionBanner = intent.getStringExtra("PromotionBanner");
+            final TodayPromotionMessage tpm = ProductDetailOption.getTodayPromotionMessage(
+                    PromotionBanner, "", TodayPromotionMessage.class);
+            // Log.i("step", "tpm == null:"+(tpm == null));
+
+            if (tpm != null) {
+                String pdpMessage = tpm.PDPMessage.replaceAll("&#39;", "").replace("&amp;", "");
+                map.put(ecouponTitle, tpm.PDPMessage);
+                map.put(date_text, "Offer expires"
+                        + tpm.TodayPromotionExpireDate);
+                map.put(ecouponContent, tpm.OfferDetailContent);
+                map.put(enterCodeCopyText, tpm.PromotionCode);
+                map.put(pretitle_text, "");
+                map.put(presubtitle_text, "");
+            }
+
+            ecouponTitle.setTextColor(color.greyheadercolor);
+            enterCodeCopyText.setVisibility(View.VISIBLE);
+            enterCodeText.setVisibility(View.VISIBLE);
+            activateButton.setVisibility(View.GONE);
+            enterCodeCopyText.setOnClickListener(new OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    promotionCode = enterCodeCopyText.getText().toString();
+                    isPromoCodecopied = true;
+                    DialogUtil.OneButtonShowMessageDialog(EcouponIntroActivity.this,
+                            R.string.promocode_copied, Config.PROMOCODE_COPIED, null);
+                }
+            });
+
+        } else if (isFromNewMyList) { // else //from mylist page
+            mylistitem = (MyListItem) intent.getSerializableExtra("itemlist");
+            listIndex = intent.getIntExtra("position", -1);
+
+            // ecouponTitle.setText(ecouponCode);
+            // pretitle_text.setText(mylistitem.EcouponOfferDetailTitle);
+            // presubtitle_text.setText(mylistitem.EcouponOfferDetailSubTitle);
+            // ecouponContent.setText(mylistitem.EcouponOfferDetailDescription);
+            ecouponCode = mylistitem.ECouponCode;
+            map.put(ecouponTitle, mylistitem.getECouponDesc());
+            map.put(date_text,mylistitem.getECouponExpiredTime());
+            map.put(pretitle_text, mylistitem.getEcouponOfferDetailTitle());
+            map.put(presubtitle_text, mylistitem.getEcouponOfferDetailSubTitle());
+            map.put(ecouponContent, mylistitem.getEcouponOfferDetailDescription());
+
+            enterCodeCopyText.setVisibility(View.GONE);
+            enterCodeText.setVisibility(View.INVISIBLE);
+            activateButton.setVisibility(View.VISIBLE);
+            if (!Boolean.parseBoolean(mylistitem.IsOutOfStock)){
+                activateButton.setText("Redeem & Add to Cart");
+            }
+        }
+
+        setText(map);
+
+        activateButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                HashMap<String, String> param = new HashMap<String, String>();
+                param.put("ecouponCode", ecouponCode);
+                Task task = new Task(Config.TASK_PDP_ACTIVE_ECOUPON, param);
+                task.setExcutor(new ApplyECouponCodeExecutor());
+                MainService.addNewTask(task,EcouponIntroActivity.this);
+                showProgress(EcouponIntroActivity.this);
+            }
+        });
+    }
+
+    public void refresh(Object... param) {
+        int option = (Integer) param[0];
+        dismissProgress();
+        switch (option) {
+            case Config.TASK_GET_SPECIAL_OFFER:
+                ecoupon = (Ecoupon) param[1];
+                if (ecoupon != null) {
+                    ecouponTitle.setText(ecoupon.PreViewTitle);
+                    ecouponContent.setText(ecoupon.ECouponDesc);
+                }
+                break;
+            case Config.TASK_PDP_ACTIVE_ECOUPON:
+                ResponseResult resultString = (ResponseResult) param[1];
+                if (resultString != null && resultString.ErrorCode != null) {
+                    DialogUtil.OneButtonShowMessageDialog(EcouponIntroActivity.this,
+                            resultString.ErrorMessage);                
+                } else {
+	                if (resultString != null) {
+	                	if(Integer.parseInt(resultString.Action) == Config.RESULT_OK) {
+		                    Intent intent = new Intent(EcouponIntroActivity.this, isFromNewMyList ? 
+		                    		NewMyListActivity.class : ProductDetailPageActivity.class);
+		                    if (isFromNewMyList){
+		                        intent.putExtra("itemlist", mylistitem);
+		                    }
+		                    intent.putExtra("active", true);
+		                    intent.putExtra("position", listIndex);
+		                    DialogUtil.OneButtonShowMessageDialog(this, Config.TASK_PDP_ACTIVE_ECOUPON,
+		                            intent, R.string.add_successful);
+		                } else  {
+		                    DialogUtil.OneButtonShowMessageDialog(EcouponIntroActivity.this,
+		                            resultString.Message);
+		                }
+	                }
+                }
+                break;
+        }
+
+    }
+
+    @Override
+    public void init() {
+        
+    }
+
+    private void setText(TextView textview, String str) {
+
+        if (null == str || "null".equals(str) || "".equals(str)) {
+            textview.setVisibility(View.GONE);
+            return;
+        } else {
+            textview.setVisibility(View.VISIBLE);
+            textview.setText(str);
+        }
+
+    }
+
+    private void setText(Map<TextView, String> map) {
+        Set<TextView> set = map.keySet();
+        for (TextView textview : set) {
+            setText(textview, map.get(textview));
+        }
+    }
+}

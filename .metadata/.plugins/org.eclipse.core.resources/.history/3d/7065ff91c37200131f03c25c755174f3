@@ -1,0 +1,8 @@
+package com.lyong.opengl.renderer;
+
+public class Snippet {
+    public static void main(String[] args) {
+        MyTriangleStripRenderer
+    }
+}
+

@@ -1,0 +1,336 @@
+package com.suryani.util;
+
+import android.content.SharedPreferences;
+
+/*
+ * Config project 
+ */
+
+public class Config {
+
+    // ----------------------------
+    // ---- HOST_NAME
+    // ---------------------------
+    // decide whether the environment argument selection is needed
+    public static final boolean isTesting = false;
+    public static final boolean isForAmazon = false;
+    /*
+     * if isTesting is false change the environment argument only need to change env_index 0 local 1 prod 2 uat 3 qa
+     */
+    public static final int env_index = 1;
+    // data format
+    public static boolean isPayPalOn = true;
+    public static String OUTJSON = "&output=json";
+
+    // Prod
+    public static String HOST_NAME = "https://api.quidsi.com";
+    public static String APP_ID = "?appid=BC20165E5ED948AB8C2F24CE33F5412D&appkey=7E8F9CDCD12E4A7A91E11F31E796948B";
+    public static String CROSS_SITE_URL = "http://c1.diapers.com/images/banners/mobileshop/AndroidAppList_v105.xml";
+    public static String paypal_url = "http://c1.diapers.com/images/banners/mobileshop/paypal.xml";
+
+    public static int TEMP_SITE_INDEX = 0;
+    public static int TEMP_CROSS_SITE_INDEX = 0;
+    public static int CACHE_LIMIT = 30;
+    // Home page
+    public static SharedPreferences prefer;
+
+    public static boolean isFromHomeBanner = false;
+    public static boolean isDebug = false;
+    public static boolean isSessionTimeOut = false;
+    // ===============================
+    // split page
+    // ===============================
+    public static int TOTAL_PAGE;
+    public static int DEFAULT_PAGE_SIZE = 20;
+    public static int TOTAL_COUNT; // count
+
+    // ===============================
+    // HTTP REQUEST MODE
+    // ===============================
+    public static final int HTTP_GET = 0;
+    public static final int HTTP_POST = 1;
+
+    // ===============================
+    // HTTP REQUEST RESULT CODE
+    // ===============================
+    public static final int RESULT_OK = 0;
+    public static final int RESULT_FAIL = 1;
+
+    // ============================
+    // Action ID
+    // ============================
+    public static final int ACTION_NONE = 0;
+    public static final int ACTION_GET_SESSION = 1;
+    // public static final int ACTION_TO_CART = 2;
+    public static final int ACTION_REVIEW_TO_CART = 3;
+
+    // username
+    public static boolean isLoginRequired = false;
+    public static boolean isMyListDataChanged = false;
+
+    // product option
+    public static final int CHOOSECOLOR = 1;
+    public static final int CHOOSESIZE = 2;
+    public static final int CHOOSEOPTION = 3;
+    public static final int CHOOSEATTR_1 = 4;
+    public static final int CHOOSEATTR_2 = 5;
+
+    // ============================
+    // Task ID
+    // ============================
+    public static final int TASK_PDP_OPTION_REFRESH = 1000;
+
+    // homepage
+    public static final int TASK_GET_BANNER = 100; // shop page
+
+    // shop
+    public static final int TASK_GET_ALL_NAVIGATION = TASK_GET_BANNER + 1; // shop
+                                                                           // page
+    public static final int TASK_GET_SUB_NAVIGATION = TASK_GET_ALL_NAVIGATION + 1; // shop
+                                                                                   // item
+                                                                                   // page
+    public static final int TASK_GET_PRODUCTS = TASK_GET_SUB_NAVIGATION + 1; // product
+                                                                             // list
+                                                                             // display
+    public static final int TASK_GET_PRODUCT_DETAIL = TASK_GET_PRODUCTS + 1; // product
+                                                                             // detail
+                                                                             // description
+                                                                             // display
+    public static final int TASK_GET_SPECIAL_OFFER = TASK_GET_PRODUCT_DETAIL + 1; // product
+                                                                                  // detail
+                                                                                  // special
+                                                                                  // offer
+
+    // product detail intro
+    public static final int TASK_PDP_OPTIONS = TASK_GET_SPECIAL_OFFER + 1; // PDP
+                                                                           // OPTIONS
+    public static final int TASK_PDP_OPTIONS_COLOR_COMPARE = TASK_PDP_OPTIONS + 1; // PDP
+                                                                                   // OPTIONS
+                                                                                   // COLOR
+                                                                                   // COMPARE
+    public static final int TASK_PDP_FREQUENTLY_BOUGHT = TASK_PDP_OPTIONS_COLOR_COMPARE + 1; // PDP
+                                                                                             // BOUGHT
+    public static final int TASK_PDP_REVIEW = TASK_PDP_FREQUENTLY_BOUGHT + 1; // PDP
+                                                                              // REVIEW
+    public static final int TASK_PDP_ACTIVE_ECOUPON = TASK_PDP_REVIEW + 1;
+
+    public static final int TASK_PDP_ADD_ALL_TO_CART = TASK_PDP_ACTIVE_ECOUPON + 1;
+    public static final int TASK_PDP_COMPARE_TO_CART = TASK_PDP_ADD_ALL_TO_CART + 1;
+    public static final int TASK_ADD_TO_CART = TASK_PDP_COMPARE_TO_CART + 1;
+    public static final int TASK_UPDATE_CART = TASK_ADD_TO_CART + 1;
+    public static final int TASK_REMOVE_CART = TASK_UPDATE_CART + 1;
+
+    // customer
+    public static final int TASK_PAYMENT_DEFAULT = TASK_REMOVE_CART + 1; // get
+                                                                         // payment
+                                                                         // page
+                                                                         // default
+                                                                         // info
+    public static final int TASK_CUSTOMER_INFO = TASK_PAYMENT_DEFAULT + 1; // display
+                                                                           // customer
+                                                                           // shipping
+                                                                           // address
+                                                                           // &
+                                                                           // credit
+                                                                           // card
+                                                                           // info
+                                                                           // &
+                                                                           // billing
+                                                                           // address
+    public static final int TASK_CUSTOMER_ADD_ADDRESS = TASK_CUSTOMER_INFO + 1; // add
+                                                                                // customer
+                                                                                // shipping
+                                                                                // address
+                                                                                // |
+                                                                                // billing
+                                                                                // address
+    public static final int TASK_CUSTOMER_ADD_CREDITCARD = TASK_CUSTOMER_ADD_ADDRESS + 1; // add
+                                                                                          // credit
+                                                                                          // card
+
+    // essentials
+    public static final int TASK_GET_ESSENTIALS_CATEGORY = TASK_CUSTOMER_ADD_CREDITCARD + 1; // essential
+                                                                                             // center
+                                                                                             // display
+    public static final int TASK_GET_ESSENTIALS_PRODUCT = TASK_GET_ESSENTIALS_CATEGORY + 1; // essential
+                                                                                            // center
+                                                                                            // display
+    public static final int TASK_OFFLINE_TO_CART = TASK_GET_ESSENTIALS_PRODUCT + 1; // add
+    // all
+    // cart
+    // when
+    // offline
+    // to
+    // online
+
+    // cart
+    public static final int TASK_GET_ALL_CART_ITEMS = TASK_OFFLINE_TO_CART + 1; // cart
+                                                                                // page
+                                                                                // display
+
+    // login
+    public static final int TASK_LOGIN_CUSTOMER = TASK_GET_ALL_CART_ITEMS + 1; // login
+    public static final int TASK_LOGOUT_CUSTOMER = TASK_LOGIN_CUSTOMER + 1; // logout
+    public static final int TASK_REGISTRATION_CUSTOMER = TASK_LOGOUT_CUSTOMER + 1; // registration
+    public static final int TASK_FIND_PASSWORD = TASK_REGISTRATION_CUSTOMER + 1; // registration
+    /**
+     * laiwei for searching
+     */
+    public static final int TASK_GET_SEARCH = TASK_FIND_PASSWORD + 1;
+    public static final int TASK_GET_SEARCH_BANNERLIST = TASK_GET_SEARCH + 1;
+    /**
+     * laiwei for deal detail activity
+     */
+    public static final int TASK_GET_DEALS_DETAIL = TASK_GET_SEARCH_BANNERLIST + 1;
+    public static final int TASK_NARROW_SUB = TASK_GET_DEALS_DETAIL + 1;
+    public static final int TASK_CUSTOMER_SELECT_ADDRESS = TASK_NARROW_SUB + 1;
+    public static final int TASK_CUSTOMER_SELECT_CREDITCARD = TASK_CUSTOMER_SELECT_ADDRESS + 1;
+    public static final int TASK_CUSTOMER_ADD_BILLINGADDRESS = TASK_CUSTOMER_SELECT_CREDITCARD + 1;
+    public static final int TASK_ADD_CREDITECARD = TASK_CUSTOMER_ADD_BILLINGADDRESS + 1;
+    public static final int TASK_GET_REVIEW_ALL = TASK_ADD_CREDITECARD + 1;
+    public static final int TASK_CUSTOMER_REMOVE_CARD = TASK_GET_REVIEW_ALL + 1;
+    public static final int TASK_CUSTOMER_REMOVE_ADDRESS = TASK_CUSTOMER_REMOVE_CARD + 1;
+    public static final int TASK_CUSTOMER_EDIT_ADDRESS = TASK_CUSTOMER_REMOVE_ADDRESS + 1;
+    public static final int TASK_CUSTOMER_EDIT_BILLING_ADDRESS = TASK_CUSTOMER_EDIT_ADDRESS + 1;
+    public static final int TASK_EDIT_CREDITECARD = TASK_CUSTOMER_EDIT_BILLING_ADDRESS + 1;
+    public static final int TASK_CONTACT_INFO = TASK_EDIT_CREDITECARD + 1;
+    public static final int TASK_UPDATE_CONTACT_INFO = TASK_CONTACT_INFO + 1;
+    public static final int TASK_UPDATE_PASSWORD = TASK_UPDATE_CONTACT_INFO + 1;
+    public static final int TASK_ORDER_HISTORY = TASK_UPDATE_PASSWORD + 1;
+    public static final int TASK_ORDER_HISTORY_DETAIL = TASK_ORDER_HISTORY + 1;
+    public static final int TASK_GET_REVIEW_PROMO = TASK_ORDER_HISTORY_DETAIL + 1;
+    public static final int TASK_GET_REVIEW_CHECKOUT = TASK_GET_REVIEW_PROMO + 1;
+    public static final int TASK_GET_PRODUCT_REFINEMENT = TASK_GET_REVIEW_CHECKOUT + 1;
+    public static final int TASK_DPA_TO_PLP = TASK_GET_PRODUCT_REFINEMENT + 1;
+    public static final int TASK_GET_ALL_PROMO_ITEMS = TASK_DPA_TO_PLP + 1;
+    public static final int TASK_DEL_PROMOCODE = TASK_GET_ALL_PROMO_ITEMS + 1;
+    public static final int TASK_GET_ALL_GIFT_ITEMS = TASK_DEL_PROMOCODE + 1;
+    public static final int TASK_GET_REVIEW_PROMO_1 = TASK_GET_ALL_GIFT_ITEMS + 1;
+    public static final int TASK_GET_SEARCH_BANNERLIST_RE = TASK_GET_REVIEW_PROMO_1 + 1;
+    public static final int TASK_GET_SEARCH_RE = TASK_GET_SEARCH_BANNERLIST_RE + 1;
+    public static final int TASK_GET_BIG_IMAGE = TASK_GET_SEARCH_RE + 1;
+    public static final int TASK_GET_MYLIST = TASK_GET_BIG_IMAGE + 1;
+    public static final int TASK_GET_MYLIST_SITE = TASK_GET_MYLIST + 1;
+    public static final int TASK_GET_MYLIST_SORT = TASK_GET_MYLIST_SITE + 1;
+    public static final int TASK_NEWMYLIST_ADD_ALL_CART = TASK_GET_MYLIST_SORT + 1;
+    public static final int TASK_GET_ZIP_MSG = TASK_NEWMYLIST_ADD_ALL_CART + 1;
+    public static final int TASK_GET_MYLIST_SEARCH = TASK_GET_ZIP_MSG + 1;
+    public static final int TASK_GET_MYLIST_REFRESH = TASK_GET_MYLIST_SEARCH + 1;
+    public static final int ACTION_REVIEW_TO_PAYMENT = TASK_GET_MYLIST_REFRESH + 1;
+    public static final int TASK_GET_OUR_SITES = ACTION_REVIEW_TO_PAYMENT + 1;
+    public static final int TASK_PAYPAL = TASK_GET_OUR_SITES + 1;
+    public static final int TASK_PAYPAL_NO_AGU = TASK_PAYPAL + 1;
+    public static final int TASK_BACK_REGISTER = TASK_PAYPAL_NO_AGU + 1;
+    public static final int TASK_GET_ALL_NAVIGATION_CROSS_SITE = TASK_BACK_REGISTER + 1;
+    public static final int TASK_GET_ALL_NAVIGATION_WAG = TASK_GET_ALL_NAVIGATION_CROSS_SITE + 1;
+    public static final int TASK_GET_YOYOAGE_NAVIGATION = TASK_GET_ALL_NAVIGATION_WAG + 1;
+    public static final int TASK_GET_ALL_NAVIGATION_YOYO = TASK_GET_YOYOAGE_NAVIGATION + 1;
+    public static final int TASK_GET_YOYOCHARACTER = TASK_GET_ALL_NAVIGATION_YOYO + 1;
+    public static final int TASK_GET_YOYOBRAND = TASK_GET_YOYOCHARACTER + 1;
+    public static final int TASK_GET_YOYOSALE_SUBNAVIGATION = TASK_GET_YOYOBRAND + 1;
+
+    public static final int TASK_CUSTOMER_ADD_ADDRESS_NEW = TASK_GET_YOYOSALE_SUBNAVIGATION + 1;
+    public static final int TASK_SEARCH_COUNT = TASK_CUSTOMER_ADD_ADDRESS_NEW + 1;
+    public static final int TASK_GET_ALL_NAVIGATION_HOME = TASK_SEARCH_COUNT + 1;
+
+    public static final int TASK_GET_SAMPLESOCIETY_STATUS = TASK_GET_ALL_NAVIGATION_HOME + 1;
+
+    public static final int TASK_GET_SAMPLESOCIETY_NOTIFYME = TASK_GET_SAMPLESOCIETY_STATUS + 1;
+
+    public static final int TASK_PAYMENT_SS = TASK_GET_SAMPLESOCIETY_NOTIFYME + 1;
+
+    public static final int TASK_CUSTOMER_SELECT_ADDRESS_SS = TASK_PAYMENT_SS + 1;
+
+    public static final int TASK_CUSTOMER_SELECT_CREDITCARD_SS = TASK_CUSTOMER_SELECT_ADDRESS_SS + 1;
+
+    public static final int TASK_GET_SAMPLESOCIETY_PLACE_ORDER = TASK_CUSTOMER_SELECT_CREDITCARD_SS + 1;
+
+    public static final int TASK_GET_SAMPLESOCIETY_DASHBOARD = TASK_GET_SAMPLESOCIETY_PLACE_ORDER + 1;
+
+    public static final int TASK_GET_SAMPLESOCIETY_PROMO = TASK_GET_SAMPLESOCIETY_DASHBOARD + 1;
+    public static final int TASK_LOGOUT_LANDING = TASK_GET_SAMPLESOCIETY_PROMO + 1;
+    public static final int TASK_PAYMENT_SELECT_ADDRESS = TASK_LOGOUT_LANDING + 1;
+
+    public static final int TASK_GET_SAMPLE_PRODUCT = TASK_PAYMENT_SELECT_ADDRESS + 1;
+
+    public static final int TASK_ADD_SAMPLING_SKU = TASK_GET_SAMPLE_PRODUCT + 1;
+
+    public static final int TASK_ADD_SAMPLING_SKU_FAIL = TASK_ADD_SAMPLING_SKU + 1;
+    public static final int TASK_ADD_SAMPLING_SKU_SUCCESS = TASK_ADD_SAMPLING_SKU_FAIL + 1;
+
+    public static final int TASK_REMOVE_CART_SAMPLE_ITEM = TASK_ADD_SAMPLING_SKU_SUCCESS + 1;
+
+    public static final int TASK_GET_ALL_NAVIGATION_WAG_LIB = TASK_REMOVE_CART_SAMPLE_ITEM + 1;
+
+    public static final int TASK_NARROW_SUB_WAG = TASK_GET_ALL_NAVIGATION_WAG_LIB + 1;
+
+    public static final int TASK_GET_DIAPERS_CLOTHING_SUBNAVIGATION = TASK_NARROW_SUB_WAG + 1;
+
+    public static final int PROMOCODE_COPIED = TASK_GET_DIAPERS_CLOTHING_SUBNAVIGATION + 1;
+    public static final int TASK_CUSTOMER_INFO_IN_PAYMENT = PROMOCODE_COPIED + 1;
+    public static final int TASK_GET_QSTOKEN = TASK_CUSTOMER_INFO_IN_PAYMENT + 1;
+    public static final int TASK_PAYMENT_DEFAULT_IN_LOGIN = TASK_GET_QSTOKEN + 1;
+    public static final int TASK_ADD_SAMPLESOCIETY_PROMO = TASK_PAYMENT_DEFAULT_IN_LOGIN + 1;
+    public static final int TASK_REMOVE_SAMPLESOCIETY_PROMO = TASK_ADD_SAMPLESOCIETY_PROMO + 1;
+    public static final int TASK_GET_ALL_NAVIGATION_AFTERSCHOOL = TASK_REMOVE_SAMPLESOCIETY_PROMO + 1;
+    public static final int TASK_GET_MARKET_DETAILS = TASK_GET_ALL_NAVIGATION_AFTERSCHOOL + 1;
+    public static final int TASK_REMOVE_CART_IN_PAYMENT = TASK_GET_MARKET_DETAILS + 1;
+    public static final int TASK_GET_LANDING_PAGE = TASK_REMOVE_CART_IN_PAYMENT + 1;
+    public static final int TASK_GET_URL_HELP = TASK_GET_LANDING_PAGE + 1;
+    public static final int TASK_GET_PRODUCTS_NAVIGATION = TASK_GET_URL_HELP + 1;
+    public static final int TASK_GET_LANDING_PAGE_CONTENT = TASK_GET_PRODUCTS_NAVIGATION + 1;
+    public static final int TASK_GET_BANNER_CROSS_SITE = TASK_GET_LANDING_PAGE_CONTENT + 1;
+    public static final int TASK_GET_CART_QUANTITY = TASK_GET_BANNER_CROSS_SITE + 1;
+    public static final int TASK_GET_ALL_TOPMENU_CROSS_SITE = TASK_GET_CART_QUANTITY + 1;
+    public static final int EXCEPTION_SOCKET_TIMEOUT = TASK_GET_ALL_TOPMENU_CROSS_SITE + 1;
+    public static final int TASK_GET_VISITOR = EXCEPTION_SOCKET_TIMEOUT + 1;
+    public static final int TASK_GET_SHIPPINGADDRESS_COUNT = TASK_GET_VISITOR + 1;
+    public static final int ACTION_CHECK_ABOUT_YOU_FOR_NC = TASK_GET_SHIPPINGADDRESS_COUNT + 1;
+    public static final int TASK_CUSTOMER_INFO_ABOUT_YOU = ACTION_CHECK_ABOUT_YOU_FOR_NC + 1;
+    public static final int ACTION_CHECK_ABOUT_BABY = TASK_CUSTOMER_INFO_ABOUT_YOU + 1;
+    public static final int ACTION_CHECK_ABOUT_YOU_FOR_RC = ACTION_CHECK_ABOUT_BABY + 1;
+    public static final int ACTION_CREATE_BABY_REGISTRY = ACTION_CHECK_ABOUT_YOU_FOR_RC + 1;
+    public static final int ACTION_CHECK_ABOUT_ADD_ADDRESS = ACTION_CREATE_BABY_REGISTRY + 1;
+    public static final int TASK_CUSTOMER_INFO_ABOUT_YOU_AFTER_ADD = ACTION_CHECK_ABOUT_ADD_ADDRESS + 1;
+    public static final int TASK_GET_BABY_REGISTRY_PROFILE = TASK_CUSTOMER_INFO_ABOUT_YOU_AFTER_ADD + 1;
+    public static final int ACTION_CHECK_ABOUT_SAVE_ADDRESS = TASK_GET_BABY_REGISTRY_PROFILE + 1;
+    public static final int ACTION_CHECK_ABOUT_BABY_SAVE = ACTION_CHECK_ABOUT_SAVE_ADDRESS + 1;
+    public static final int ACTION_CREATE_BABY_REGISTRY_SAVE_OPTION = ACTION_CHECK_ABOUT_BABY_SAVE + 1;
+    public static final int ACTION_ADD_TO_BABY_REGISTRY_IN_PDP = ACTION_CREATE_BABY_REGISTRY_SAVE_OPTION + 1;
+    public static final int ACTION_GET_BABY_REGISTRY_LIST = ACTION_ADD_TO_BABY_REGISTRY_IN_PDP + 1;
+    public static final int ACTION_REMOVE_PRODUCT_FROM_BR = ACTION_GET_BABY_REGISTRY_LIST + 1;
+    public static final int ACTION_UPDATE_BR_PRODUCT_QTY = ACTION_REMOVE_PRODUCT_FROM_BR + 1;
+    public static final int ACTION_SAVE_FOR_LATER = ACTION_UPDATE_BR_PRODUCT_QTY + 1;
+    public static final int TASK_LOAD_SAVE_FOR_LATER = ACTION_SAVE_FOR_LATER + 1;
+    public static final int TASK_GET_REVIEW_PROMO_REAPPLY = TASK_LOAD_SAVE_FOR_LATER + 1;
+    public static final int TASK_CUSTOMER_INFO_CC = TASK_GET_REVIEW_PROMO_REAPPLY + 1;
+    public static final int TASK_CUSTOMER_EDIT_CREDITCARD = TASK_CUSTOMER_INFO_CC + 1;
+    public static final int TASK_DEL_PROMOCODE_IN_CART = TASK_CUSTOMER_EDIT_CREDITCARD + 1;
+    public static final int TASK_GET_REVIEW_PROMO_REAPPLY_IN_CART = TASK_DEL_PROMOCODE_IN_CART + 1;
+    public static final int TASK_DEL_PROMOCODE_IN_REVIEW = TASK_GET_REVIEW_PROMO_REAPPLY_IN_CART + 1;
+    public static final int TASK_GET_REVIEW_PROMO_REAPPLY_IN_REVIW = TASK_DEL_PROMOCODE_IN_REVIEW + 1;
+    public static final int TASK_GET_REVIEW_PROMO_IN_REVIEW = TASK_GET_REVIEW_PROMO_REAPPLY_IN_REVIW + 1;
+    public static final int TASK_PAYPAL_CHECKOUT = TASK_GET_REVIEW_PROMO_IN_REVIEW + 1;
+    public static final int TASK_GET_PRODUCT_DELIVERYMSG = TASK_PAYPAL_CHECKOUT + 1;
+    public static final int TASK_PDP_REVIEW_AMAZON = TASK_GET_PRODUCT_DELIVERYMSG + 1;
+    public static final int TASK_PDP_REVIEW_AMAZON_URL = TASK_PDP_REVIEW_AMAZON + 1;
+    public static final int TASK_NOTIFY_ME = TASK_PDP_REVIEW_AMAZON_URL + 1;
+    public static final int TASK_GET_MYACCOUNT = TASK_NOTIFY_ME + 1;
+    public static final int TASK_CUSTOMER_SELECT_DEFAULT_ADDRESS = TASK_GET_MYACCOUNT + 1;
+
+    public static final int TASK_GET_SEARCH_ON_SEARCHEPAGE = TASK_CUSTOMER_SELECT_DEFAULT_ADDRESS + 1;
+    public static final int TASK_GET_PRODUCT_FILTER = TASK_GET_SEARCH_ON_SEARCHEPAGE + 1;
+    public static final int TASK_GET_SESSION = TASK_GET_PRODUCT_FILTER + 1;
+    public static final int TASK_ADD_TO_CART_FROM_SAVE_FOR_LATER = TASK_GET_SESSION + 1;
+
+    public static final int TASK_PDP_REVIEW_AMAZON_SUMMARY = TASK_ADD_TO_CART_FROM_SAVE_FOR_LATER + 1;
+    
+    public static final int TASK_PDP_REVIEW_MESSAGE = TASK_PDP_REVIEW_AMAZON_SUMMARY + 1;
+    public static final int TASK_CHECK_UPDATE = TASK_PDP_REVIEW_MESSAGE + 1;
+
+    // in wag
+    public static int whichColor = 5;
+    public static String scopeStr = null;
+
+    public static String DEVICESITE = "/AndroidDiapers";
+}

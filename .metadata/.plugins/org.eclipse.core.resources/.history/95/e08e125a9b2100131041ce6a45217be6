@@ -1,0 +1,208 @@
+package com.suryani.util;
+
+import java.util.ArrayList;
+
+import android.support.v4.view.ViewPager;
+import android.support.v4.view.ViewPager.OnPageChangeListener;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ImageView;
+import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
+
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.adapter.HomeBannerPagerAdapter;
+import com.suryani.db.AppRecordData;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.Banner;
+import com.suryani.volley.executor.impl.GetPageBannerExecutoer;
+import com.suryani.widget.MyViewFlipper;
+import com.suryani.widget.RmoteBannerImageView;
+
+public class TopBannerUtil {
+    
+    private BaseActivity activity;
+    
+    private MyViewFlipper flipper;
+    private ViewPager viewpager;
+    private RmoteBannerImageView imgBanner;
+    private RadioGroup radioGroup;
+    private ImageView orderTip;
+    
+    private Banner banner;
+    private HomeBannerPagerAdapter pagerAdapter;
+    
+    private ArrayList<Banner> bannerList;
+    
+    public TopBannerUtil(BaseActivity activity) {
+        this.activity = activity;
+    }
+
+    public TopBannerUtil(BaseActivity activity,int fliperId,int viewpagerId,int imageBannerId,int radioGroupId) {
+        this.activity = activity;
+        this.flipper = (MyViewFlipper) activity.findViewById(fliperId);
+        flipper.setDisplayedChild(0);
+        this.viewpager = (ViewPager) activity.findViewById(viewpagerId);
+        this.imgBanner = (RmoteBannerImageView) activity.findViewById(imageBannerId);
+        radioGroup = (RadioGroup) activity.findViewById(radioGroupId);
+        
+    }
+    
+    public void requestBannerList(int actionId){
+        if (bannerList == null) {
+            Task task = new Task(actionId, null);
+            task.setExcutor(new GetPageBannerExecutoer());
+            MainService.addNewTask(task,activity);
+        }else{
+            initBanner();
+        }
+    }
+    
+     public void initBanner(){
+        if (bannerList != null) {
+            //imgBanner_rvhp.setNoHeadImageUrl(bannerList.get(1).ImgUrl);
+           if(bannerList.size() > 0){
+               banner = bannerList.get(0);
+               imgBanner.setNoHeadImageUrl(banner.ImgUrl);
+               imgBanner.setOnClickListener(new OnClickListener(){
+
+                @Override
+                public void onClick(View arg0) {
+                    if(banner != null){
+                    	 activity.getIntent().putExtra("oldTitle", banner.Title);
+                    	 new CMSUtil().switchScreenToTurn(banner.Url, activity);
+                    }
+                }});
+           }
+           if(bannerList.size() > 1){
+               pagerAdapter = new HomeBannerPagerAdapter(activity);
+               pagerAdapter.setList(bannerList.subList(1, bannerList.size()));
+               viewpager.setAdapter(pagerAdapter);
+               radioGroup.setVisibility(View.VISIBLE);
+               setRadioButton(radioGroup,bannerList.size()-1);
+               viewpager.setOnPageChangeListener(new OnPageChangeListener(){
+
+                @Override
+                public void onPageScrollStateChanged(int arg0) {
+                    // TODO Auto-generated method stub
+                    
+                }
+
+                @Override
+                public void onPageScrolled(int arg0, float arg1, int arg2) {
+                    // TODO Auto-generated method stub
+                    
+                }
+
+                @Override
+                public void onPageSelected(int arg0) {
+                    int id = R.id.radio_0;
+                    radioGroup.check(id+arg0);
+                }});
+               radioGroup.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+                @Override
+                public void onCheckedChanged(RadioGroup group, int checkedId) {
+                    //MyLogger.log("banner radiogroup checkedid:"+checkedId);
+                    int item = checkedId - R.id.radio_0;
+                    viewpager.setCurrentItem(item);
+                }});
+           }
+        }
+    }
+
+    public void setFlipper(MyViewFlipper flipper) {
+        this.flipper = flipper;
+    }
+
+    public void setViewpager(ViewPager viewpager) {
+        this.viewpager = viewpager;
+    }
+
+    public void setImgBanner(RmoteBannerImageView imgBanner) {
+        this.imgBanner = imgBanner;
+    }
+
+    public ArrayList<Banner> getBannerList() {
+        return bannerList;
+    }
+
+    public void setBannerList(ArrayList<Banner> bannerList) {
+        this.bannerList = bannerList;
+      
+    }
+    
+//    public void changeImageBanner(View view)
+//    {
+//        changeImageBanner(UserStatus.getInstance().getUserLevel(),view);
+//    }
+    
+    public void changeImageBanner(int siteIndex) {
+        changeImageBanner(AppRecordData.getRC(siteIndex),null);
+    }
+    
+    public void changeImageBanner(boolean isOlderUser,View view){
+        
+       
+        MyLogger.log("isOlderUser:"+isOlderUser);
+        
+        if (isOlderUser)
+        {
+             if(view != null)
+                  view.setVisibility(View.VISIBLE);
+             flipper.setDisplayedChild(1);
+            
+        }
+        else
+        {
+            flipper.setDisplayedChild(0);
+            if(view != null)
+                 view.setVisibility(View.GONE);
+        }
+    }
+    
+    private void setRadioButton(RadioGroup radioGroup,int size){
+        int id = R.id.radio_0;
+        for(int i = 0;i<size;i++){
+            radioGroup.findViewById(id+i).setVisibility(View.VISIBLE);
+        }
+    }
+
+    public ImageView getOrderTip() {
+        return orderTip;
+    }
+
+    public void setOrderTip(ImageView orderTip) {
+        this.orderTip = orderTip;
+        orderTip.setVisibility(View.GONE);
+    }
+    
+   
+//    public void updateOrderTip(){
+//        
+//        boolean isOlderUser = UserStatus.getInstance().getUserLevel();
+//       // boolean isLogined = UserStatus.getInstance().getLoginStatus();
+//       
+//        
+//        if(isOlderUser)
+//            orderTip.setImageDrawable(activity.getResources().getDrawable(
+//                    R.drawable.free_shipping_first_banner));
+//        else{
+//            if (flag)
+//            {
+//                orderTip.setImageDrawable(activity.getResources().getDrawable(R.drawable.first_order_banner));
+//                flag = false;
+//            }
+//            else
+//            {
+//                orderTip.setImageDrawable(activity.getResources().getDrawable(
+//                        R.drawable.free_shipping_first_banner));
+//                flag = true;
+//            }
+//        }
+//    }
+
+   
+}

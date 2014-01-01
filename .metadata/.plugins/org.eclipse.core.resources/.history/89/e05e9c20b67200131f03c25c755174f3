@@ -1,0 +1,35 @@
+
+package com.lyong.opengl;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.Menu;
+
+import com.lyong.opengl.renderer.MyPointerRenderer;
+import com.lyong.opengl.view.MyGLSurfaceView;
+
+public class MainActivity extends Activity {
+
+    private MyPointerRenderer myPointRenderer;
+    private MyGLSurfaceView myGlSurfaceView;
+    
+    
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        myPointRenderer = new MyPointerRenderer();
+        
+        myGlSurfaceView.setRenderer(myPointRenderer);
+        
+        setContentView(R.layout.activity_main);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+}

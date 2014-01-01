@@ -1,0 +1,11 @@
+package com.lyong.opengl.util;
+
+import java.nio.ByteBuffer;
+
+public class BufferUtil {
+
+    public static ByteBuffer arr2ByteBuffer(float[] arr){
+        
+    }
+    
+}

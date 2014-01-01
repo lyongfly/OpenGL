@@ -1,0 +1,273 @@
+
+package com.suryani.activity;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.quidsi.activity.CartButtonEnabledActivity;
+import com.suryani.R;
+import com.suryani.activity.cart.CreateCustomerAddressActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.ContactInfo;
+import com.suryani.model.Password;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.infer.CartActionExcution;
+import com.suryani.util.Config;
+import com.suryani.util.DialogUtil;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.impl.UpdateAndForgotPasswordExecutor;
+import com.suryani.volley.executor.impl.UpdateContactInfoExecutor;
+
+/**
+ * @author:aloy 
+ */
+public class ContactInfoActivity extends CartButtonEnabledActivity implements CartActionExcution{
+
+    private EditText firstNameText,
+            lastNameText,
+            phoneText,
+            userNameText;
+    private Button updateBtn;
+    private boolean isEdittPassword;
+
+    private OnClickListener updateContactListener = new OnClickListener() {
+
+        @Override
+        public void onClick(View v) {
+
+            ContactInfo info = new ContactInfo();
+
+            if ("".equals(firstNameText.getText().toString())) {
+                DialogUtil.OneButtonShowMessageDialog(ContactInfoActivity.this,
+                        R.string.firstandlast_name_incorrect);
+                return;
+            } else {
+                info.FirstName = firstNameText.getText().toString();
+            }
+
+            if ("".equals(lastNameText.getText().toString())) {
+                DialogUtil.OneButtonShowMessageDialog(ContactInfoActivity.this,
+                        R.string.firstandlast_name_incorrect);
+                return;
+            } else {
+                info.LastName = lastNameText.getText().toString();
+            }
+
+            String phoneNumber = phoneText.getText().toString();
+
+            if (phoneNumber.length() > 10) {
+                phoneNumber = CreateCustomerAddressActivity.getStringNumber(phoneNumber);
+            }
+
+            Pattern p = Pattern.compile("^[2-9][0-9]{9}");
+            Matcher ma = p.matcher(phoneNumber);
+            Pattern p1 = Pattern.compile("^\\([2-9][0-9]{2}\\)[0-9]{3}-[0-9]{4}");
+            Matcher ma1 = p1.matcher(phoneNumber);
+
+            if ("".equals(phoneNumber) || (!ma.matches() && !ma1.matches())) {
+                String mes = Util.getStringFromResource(ContactInfoActivity.this,
+                        R.string.inputcorectphone);// "Please input correct Phone.";
+                DialogUtil.OneButtonShowMessageDialog(ContactInfoActivity.this, mes);
+                return;
+            } else {
+                info.Phone1 = phoneNumber;
+            }
+
+            if ("".equals(userNameText.getText().toString())) {
+                DialogUtil.OneButtonShowMessageDialog(ContactInfoActivity.this,
+                        R.string.username_not_empty);
+                return;
+            } else {
+                info.UserName = userNameText.getText().toString();
+            }
+
+            HashMap<String, Serializable> param = new HashMap<String, Serializable>();
+            param.put("contactInfo", info);
+
+            Task task = new Task(Config.TASK_UPDATE_CONTACT_INFO, param);
+            task.setExcutor(new UpdateContactInfoExecutor());
+            MainService.addNewTask(task, ContactInfoActivity.this);
+
+            showProgress(ContactInfoActivity.this, 1);
+
+        }
+
+    };
+    private OnClickListener changePassWordListener = new OnClickListener() {
+        public void onClick(View v) {
+            Password p = new Password();
+
+            p.Current = firstNameText.getText().toString().trim();
+            p.New = lastNameText.getText().toString().trim();
+            p.Verify = phoneText.getText().toString().trim();
+
+            if (p.hasEmptyField()) {
+                DialogUtil
+                        .OneButtonShowMessageDialog(ContactInfoActivity.this, Util
+                                .getStringFromResource(ContactInfoActivity.this,
+                                        R.string.completeinfo));
+            } else if (!p.isEqual()) {
+                DialogUtil
+                        .OneButtonShowMessageDialog(ContactInfoActivity.this, Util
+                                .getStringFromResource(ContactInfoActivity.this,
+                                        R.string.samepassword));
+            } else {
+
+                HashMap<String, Serializable> param = new HashMap<String, Serializable>();
+                param.put("password", p);
+
+				Task task = new Task(Config.TASK_UPDATE_PASSWORD, param);
+				task.setExcutor(new UpdateAndForgotPasswordExecutor(
+						Config.TASK_UPDATE_PASSWORD));
+				MainService.addNewTask(task, ContactInfoActivity.this);
+
+                showProgress(ContactInfoActivity.this, 1);
+            }
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        getLayoutInflater().inflate(R.layout.contactinfolayout, mMainLayout);
+        actionBar.setTitle(R.string.contact_info);
+
+        isEdittPassword = getIntent().getBooleanExtra("isEditPassword", false);
+
+        firstNameText = (EditText) findViewById(R.id.firstNameText);
+        lastNameText = (EditText) findViewById(R.id.lastNameText);
+        phoneText = (EditText) findViewById(R.id.phoneText);
+        phoneText.setOnFocusChangeListener(new OnFocusChangeListener() {
+
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    EditText view = (EditText) v;
+                    if (view.getText().length() == 10) {
+                        view.setText(CreateCustomerAddressActivity.getStringWithType(view.getText()
+                                .toString()));
+                    }
+                }
+            }
+        });
+        userNameText = (EditText) findViewById(R.id.userNameText);
+
+        updateBtn = (Button) findViewById(R.id.updateBtn);
+
+        if (isEdittPassword) {
+        	actionBar.setTitle(R.string.update_password);
+
+            firstNameText.setHint("Current Password");
+            firstNameText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            lastNameText.setHint("New Password");
+            lastNameText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            phoneText.setHint("Verify Password");
+            phoneText.setInputType(InputType.TYPE_CLASS_TEXT);
+            phoneText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            userNameText.setVisibility(View.GONE);
+            updateBtn.setText("Change Password");
+            updateBtn.setOnClickListener(changePassWordListener);
+			firstNameText.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD
+					| InputType.TYPE_CLASS_TEXT);
+			lastNameText.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD
+					| InputType.TYPE_CLASS_TEXT);
+			phoneText.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD
+					| InputType.TYPE_CLASS_TEXT);
+        }
+        else {
+            ContactInfo contactInfo = (ContactInfo) getIntent().getSerializableExtra("contactInfo");
+            if(contactInfo != null){
+                refresh(Config.TASK_CONTACT_INFO,contactInfo);
+                updateBtn.setOnClickListener(updateContactListener);
+            }
+            firstNameText.setInputType(InputType.TYPE_TEXT_VARIATION_NORMAL
+					| InputType.TYPE_CLASS_TEXT);
+			lastNameText.setInputType(InputType.TYPE_TEXT_VARIATION_NORMAL
+					| InputType.TYPE_CLASS_TEXT);
+			phoneText.setInputType(InputType.TYPE_TEXT_VARIATION_NORMAL
+					| InputType.TYPE_CLASS_TEXT);
+        }
+
+    }
+
+    @Override
+    public void init() {
+        
+
+    }
+
+    @Override
+    public void refresh(Object... param) {
+        
+        int flag = (Integer) param[0];
+        dismissProgress();
+        switch (flag) {
+            case Config.TASK_CONTACT_INFO:
+
+                Object obj = param[1];
+
+                if (obj instanceof ResponseResult) {
+                    Util.dealResponseResult(this, (ResponseResult) obj, this, LoginActivity.FROM_HELP_CENTER_FLAG);
+                }
+                else if (obj != null && obj instanceof ContactInfo)
+                {
+                    ContactInfo info = (ContactInfo) obj;
+
+                    firstNameText.setText(info.FirstName);
+                    lastNameText.setText(info.LastName);
+
+                    if (info.Phone1 != null && info.Phone1.length() == 10) {
+                        phoneText.setText(CreateCustomerAddressActivity
+                                .getStringWithType(info.Phone1));
+                    }
+                    userNameText.setText(info.UserName);
+                }
+
+                break;
+
+            case Config.TASK_UPDATE_CONTACT_INFO:
+            case Config.TASK_UPDATE_PASSWORD:
+                ResponseResult result = (ResponseResult) param[1];
+                Util.dealResponseResult(this, result, this, LoginActivity.FROM_HELP_CENTER_FLAG, flag);
+                break;
+        }
+
+    }
+
+    @Override
+    public void excute(BaseActivity act, ResponseResult result, int flag) {
+       switch(flag){
+           case Config.TASK_UPDATE_CONTACT_INFO:
+               DialogUtil.OneButtonShowMessageDialog(ContactInfoActivity.this,
+                       R.string.updatesuccess,
+                       flag, MyAccountActivity.class);
+               break;
+           case Config.TASK_UPDATE_PASSWORD:
+               DialogUtil.OneButtonShowMessageDialog(ContactInfoActivity.this,
+                       R.string.changepasswordsuccess,
+                       flag, MyAccountActivity.class);
+               break;
+       }
+    }
+
+    @Override
+    public boolean failedExcution(BaseActivity act, ResponseResult result, int flag) {
+        
+        return false;
+    }
+
+}

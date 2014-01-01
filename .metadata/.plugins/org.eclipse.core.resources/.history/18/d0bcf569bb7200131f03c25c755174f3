@@ -1,0 +1,5 @@
+package com.lyong.opengl.util;
+
+public class BufferUtil {
+
+}

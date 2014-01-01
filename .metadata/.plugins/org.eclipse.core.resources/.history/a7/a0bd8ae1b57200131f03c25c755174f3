@@ -1,0 +1,7 @@
+package com.lyong.opengl.view;
+
+import android.opengl.GLSurfaceView;
+
+public class MyGLSurfaceView extends GLSurfaceView {
+
+}

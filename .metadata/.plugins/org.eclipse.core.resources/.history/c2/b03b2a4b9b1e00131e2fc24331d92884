@@ -1,0 +1,235 @@
+package com.quidsi.activity;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.res.Configuration;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Bundle;
+import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.widget.DrawerLayout;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ExpandableListView;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+
+import com.quidsi.adapter.NavigationAdapter;
+import com.quidsi.model.SiteInfo;
+import com.quidsi.util.SiteUtil;
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.activity.MyAccountActivity;
+import com.suryani.crosssite.activity.ShopHomeActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.UserStatus;
+import com.suryani.util.Config;
+import com.suryani.util.DialogUtil;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.impl.UserLogOutExecutor;
+
+public abstract class NavigationActivity extends BaseActivity implements ExpandableListView.OnChildClickListener, ExpandableListView.OnGroupClickListener {
+	
+    protected DrawerLayout mDrawerLayout;
+    protected ActionBarDrawerToggle mDrawerToggle;
+    protected FrameLayout mMainLayout;
+    protected ExpandableListView mNavigation;
+    protected NavigationAdapter adapter;   
+    protected View loginView;
+    protected boolean isLoggedIn;
+    protected Button loginButton;
+    protected TextView userName;
+    
+    public boolean onChildClick(ExpandableListView parent, View v,
+            int groupPosition, int childPosition, long id) {
+        switch(adapter.getChildType(groupPosition, childPosition)) {
+        case 0:
+        	Util.setDefaultIndex();
+        	if(!SiteUtil.isDiapersApp() && childPosition > 1) {
+        		childPosition += 1;
+        	}
+        	switch(childPosition) {
+        	case 0:
+        		GotoHomeActivity(this);
+        		break;
+        	case 1:
+        		gaTracker.trackEvent("Navigation", "ActionBar", "Easy Reorder", 0L);
+            	GotoMyListActivity(false);
+        		break;
+        	case 2:
+        		gaTracker.trackEvent("Navigation", "ActionBar", "Baby Registry", 0L);
+            	GotoBabyRegistryActivity();
+        		break;
+        	case 3:
+        		GotoMyListActivity(true);
+        		break;
+        	case 4:
+        		Intent intent = new Intent(this, MyAccountActivity.class);
+                startActivity(intent);
+        		break;
+        	case 5:
+        		gaTracker.trackEvent("Navigation", "ActionBar", "More", 0L);
+            	GotoSetActivity();
+        		break;
+        	}
+        	break;
+        case 1:
+        	SiteInfo info = (SiteInfo) adapter.getChild(groupPosition, childPosition);
+            Util.setConfigTempCrossSiteIndex(info.Name);
+            Intent i = new Intent(this, ShopHomeActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(i);
+        	break;
+        }
+        mDrawerLayout.closeDrawers();
+        return true;
+    }
+
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.navigation_base);
+		isLoggedIn = UserStatus.getInstance().getLoginStatus();
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mMainLayout = (FrameLayout) findViewById(R.id.main_layout);
+        mNavigation = (ExpandableListView) findViewById(R.id.left_drawer);
+        if(actionBar != null) {
+	        mDrawerToggle = new ActionBarDrawerToggle(
+	                this,                  /* host Activity */
+	                mDrawerLayout,         /* DrawerLayout object */
+	                R.drawable.ic_drawer,  /* nav drawer icon to replace 'Up' caret */
+	                R.string.drawer_open,  /* "open drawer" description */
+	                R.string.drawer_close  /* "close drawer" description */
+	                ) {
+	
+	            /** Called when a drawer has settled in a completely closed state. */
+	            public void onDrawerClosed(View view) {
+	                
+	            }
+	
+	            /** Called when a drawer has settled in a completely open state. */
+	            public void onDrawerOpened(View drawerView) {
+	                
+	            }
+	        };
+	        
+	        //Add login logout functionality
+	        loginView = getLayoutInflater().inflate(R.layout.navigation_login, null);
+	        
+	        userName = (TextView) loginView.findViewById(R.id.user_name);
+	        loginButton = (Button) loginView.findViewById(R.id.login_button);
+	        loginButton.setOnClickListener(new View.OnClickListener() {
+	            public void onClick(View v) {
+	            	if(isLoggedIn) {
+	            		DialogInterface.OnClickListener leftListener = new DialogInterface.OnClickListener() {
+	                        @Override
+	                        public void onClick(DialogInterface dialog, int which) {
+	                            Task task = new Task(Config.TASK_LOGOUT_CUSTOMER, null);
+	                            task.setExcutor(new UserLogOutExecutor(NavigationActivity.this));
+	                            MainService.addNewTask(task,NavigationActivity.this);
+	                            isLoggedIn = false;
+	                            setLoginView();
+	                        }
+	                    };
+	                    DialogUtil.TwoButtonShowMessageDialog(NavigationActivity.this, R.string.sign_out_prompt ,leftListener, null);
+	            	} else {
+	            		gotoLoginPage();
+	            	}
+	            }
+	        });
+	        setLoginView();
+	        mNavigation.addHeaderView(loginView);
+	        
+	        adapter = new NavigationAdapter(this);
+	        mNavigation.setAdapter(adapter);
+	        mNavigation.setGroupIndicator(null);
+	        
+	        mNavigation.setDivider(new ColorDrawable(R.color.navigation_divider_color));
+	        mNavigation.setDividerHeight(1);
+	        int groupSize = adapter.getGroupCount();
+	        for(int i = 0; i < groupSize; ++i)
+	        	mNavigation.expandGroup(i);
+	        // Set the drawer toggle as the DrawerListener
+	        mDrawerLayout.setDrawerListener(mDrawerToggle);
+	        mNavigation.setOnChildClickListener(this);
+	        mNavigation.setOnGroupClickListener(this);
+	        actionBar.setDisplayShowTitleEnabled(true);
+	        actionBar.setDisplayHomeAsUpEnabled(true);
+	        actionBar.setDisplayUseLogoEnabled(false);
+	        actionBar.setIcon(SiteUtil.getSiteIconResourceBySiteIndex(Config.TEMP_SITE_INDEX));
+	        
+	        //Register Login/Logout Receiver
+	        IntentFilter myIntentFilter = new IntentFilter();
+	        myIntentFilter.addAction(UserStatus.USER_STATUS_LOGIN);
+	        myIntentFilter.addAction(UserStatus.USER_STATUS_LOGOUT);
+	        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, myIntentFilter);
+	       
+        }
+        
+	}
+
+	public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id) {
+		return true; // Doing nothing
+	}
+	
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
+    }
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Pass the event to ActionBarDrawerToggle, if it returns
+        // true, then it has handled the app icon touch event
+    	boolean ret = true;
+        if (!mDrawerToggle.onOptionsItemSelected(item)) {
+        	ret = super.onOptionsItemSelected(item);
+        }
+
+        return ret;
+    }
+    
+    protected final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        	String action = intent.getAction();
+            if (action.equals(UserStatus.USER_STATUS_LOGIN)) {
+                isLoggedIn = true;
+            } else if (action.equals(UserStatus.USER_STATUS_LOGOUT)) {
+            	isLoggedIn = false;
+            }
+            setLoginView();
+        }
+    };
+    
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+    }
+    
+    private void setLoginView() {
+    	if(isLoggedIn) {
+    		loginButton.setText(R.string.sign_out);
+    		userName.setText("Hi " + UserStatus.getInstance().getUserName() + "!");
+    	} else {
+    		loginButton.setText(R.string.sign_in);
+    		userName.setText(R.string.welcome);
+    	}
+    	
+    }
+
+}

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<color name="transparent_background">#99000000</color>
+    <color name="background">#FFF</color>
+    <color name="titletextcolor">#ffffff</color>
+    <color name="ecoupon_title">#666666</color>
+    <color name="contenttextcolor">#666666</color>
+    <color name="yellowtextcolor">#ff9125</color>
+    <color name="whitetextcolor">#f9fafa</color>
+    <color name="redtextcolor">#FF0000</color>
+    <color name="greyheadercolor">#d5d5d5</color>
+    <color name="bluefiltercolor">#add6de</color>
+    <color name="bluetextcolor">#5795a8</color>
+    <color name="bluesuperlink">#00f</color>
+    <color name="promo_add_bt">#000000</color>
+    <color name="cart_errormessge_bg">#FBFB97</color>
+    
+    <color name="showecoupon">#ff9125</color>
+    <color name="withecoupon">#666666</color>
+    <color name="sitetitleblack">#272B2C</color>
+    <color name="siteitemblack">#303535</color> 
+    <color name="black">#000000</color>
+    <color name="transparent">#9000</color>
+    <color name="codegreen">#79B62A</color>
+    <color name="pdpmessagecolor">#E93C1F</color>
+    <color name="new_credit_card_blue">#03888C</color>
+    <color name="product_name_color">#0c9094</color>
+    <color name="product_price_color">#e93a1d</color>
+    <color name="fitler_text_color">#f9fafa</color>
+    <color name="fitler_tab_text_color">#666</color>
+     <color name="list_header_color">#666666</color>
+  
+     <color name="ecoupon_title_color">#51CBE8</color>
+    
+     <color name="back_blue_light">#8abeee</color>
+     <color name="dog_back">#9fbe3f</color>
+    <color name="cat_back">#feb23b</color>
+    <color name="bird_back">#eccc19</color>
+    <color name="fish_back">#53c0df</color>
+    <color name="reptile_back">#df5c68</color>
+ 
+
+     <color name="price_color">#e93a1d</color>
+     <color name="itemgray">#c2c2c2</color>
+    <color name ="title_textview_color">#000</color>
+     <color name="filter_button_shadowcolor">#88888800</color>
+     <color name="cart_quantity_text_color">#9B9B9B</color>
+     
+     <drawable name="gray">#d5d5d5</drawable>
+     <drawable name="gray_popwindow">#f3f3f3</drawable>
+     <drawable name="image_unpressed">#00FFFFFF</drawable>
+     <drawable name="image_pressed">#7F1a88b0</drawable>
+     <color name="br_item_background">#dff6fe</color>
+     
+     <drawable name="br_item_unpressed">#dff6fe</drawable>
+     <color name="br_purchaser_green">#79B62A</color>
+     <color name="gray_background">#f3f3f3</color>
+     
+     <!-- Custom App Colors -->
+     <color name="primary_background_color">#2596D6</color>
+     <color name="secondary_button_color">#61C9E2</color>
+     
+     <!-- NAvigation -->
+     <color name="navigation_divider_color">#252525</color>
+      <color name="navigation_row_background_color">#2E2E2E</color>
+     <color name="filter_item_background_color">#ffd8f3fe</color>
+     <color name="login_button_text">#000</color>
+     
+     <color name="wag_pet_background_color">#DFDFDF</color>
+</resources>

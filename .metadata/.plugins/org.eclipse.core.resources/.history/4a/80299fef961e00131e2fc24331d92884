@@ -1,0 +1,186 @@
+
+package com.suryani.activity;
+
+import java.util.ArrayList;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.MessageQueue.IdleHandler;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+import com.quidsi.activity.SearchCartGlobalEnabledActivity;
+import com.quidsi.util.SiteUtil;
+import com.suryani.R;
+import com.suryani.logic.MainService;
+import com.suryani.model.Banner;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.UserStatus;
+import com.suryani.model.infer.CartActionExcution;
+import com.suryani.util.CheckUpdate;
+import com.suryani.util.Config;
+import com.suryani.util.NetUtil;
+import com.suryani.util.ReviewAppUtil;
+import com.suryani.util.TopBannerUtil;
+import com.suryani.util.Util;
+
+public class BaseHomeActivity extends SearchCartGlobalEnabledActivity implements CartActionExcution{
+
+    protected static final int bannerSwitchTime = 10000;
+    protected TopBannerUtil topBannerUtil;
+    protected static ArrayList<Banner> bannerList;
+    
+    protected boolean flag = false;
+    protected View listMylist;
+
+    protected ImageView orderTip;
+    protected Button mBtnOursites,mBtnEasyReorder;
+    protected Handler handler = new Handler();
+    protected ScrollView sv;
+    
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        actionBar.setDisplayShowTitleEnabled(false);
+        actionBar.setDisplayUseLogoEnabled(true);
+        actionBar.setLogo(SiteUtil.getSiteLogoResourceBySiteIndex(SiteUtil.getApplicationSiteIndex()));
+        ReviewAppUtil.reviewApp(this);
+        
+        CheckUpdate.checkUpdate(this);
+        
+        getLayoutInflater().inflate(R.layout.homepage, mMainLayout);
+        
+        topBannerUtil = new TopBannerUtil(this,R.id.view_flipper,R.id.banner_viewpager,R.id.subNavigationLogo,R.id.radioGroup);
+        topBannerUtil.setBannerList(bannerList);
+        topBannerUtil.requestBannerList(Config.TASK_GET_BANNER);
+        
+        sv = (ScrollView) findViewById(R.id.scroll_view);
+        sv.scrollTo(0, 0);
+        Looper.myQueue().addIdleHandler(new IdleHandler() {
+            @Override
+            public boolean queueIdle() {
+                sv.scrollTo(0, 0);
+                return false;
+            }
+        });
+    }
+    
+    @Override
+    protected void onNewIntent(Intent intent) {
+    	Looper.myQueue().addIdleHandler(new IdleHandler() {
+            @Override
+            public boolean queueIdle() {
+            	sv.smoothScrollTo(0, 0);
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public void init() {
+        mBtnOursites = (Button) this.findViewById(R.id.btn_shop_our_sites);
+        mBtnEasyReorder = (Button) this.findViewById(R.id.btn_easy_reorder);
+        
+        mBtnEasyReorder.setOnClickListener(new OnClickListener() {
+            
+            @Override
+            public void onClick(View v) {
+
+                
+            }
+        });
+        
+        mBtnOursites.setOnClickListener(new OnClickListener() {
+            
+            @Override
+            public void onClick(View v) {
+                
+            }
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void refresh(Object... param) {
+        int option = (Integer) param[0];
+        switch (option)
+        {
+            case Config.TASK_GET_BANNER:
+                topBannerUtil.setBannerList((ArrayList<Banner>) param[1]);
+                topBannerUtil.initBanner();
+                break;
+            case Config.TASK_LOGOUT_CUSTOMER:
+                //Util.dealResponseResult(this, (ResponseResult) param[1], this, -1, option);
+            	excute(this, (ResponseResult) param[1], option);
+                break;
+           
+        }
+    }
+
+
+    protected void changeImageBanner() {
+        topBannerUtil.changeImageBanner(listMylist);
+    }
+
+   
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        clearFilter();
+        if (!NetUtil.offlinePromptMessage(this))
+        {
+        	changeImageBanner();
+            Util.setDefaultIndex();
+            Config.TEMP_CROSS_SITE_INDEX = SiteUtil.getApplicationSiteIndex();
+        }
+    }
+
+    protected void setListMylist() {
+
+        listMylist = findViewById(R.id.list_mylist);
+		ImageView image = (ImageView) listMylist.findViewById(R.id.row_shop_icon);
+        TextView name = (TextView) listMylist.findViewById(R.id.rowDesc);
+		image.setImageResource(R.drawable.mylist_icon);
+        name.setText("Re-Order Your Stuff");
+        if(UserStatus.getInstance().getUserLevel()){
+        	listMylist.setVisibility(View.VISIBLE);
+        }
+        listMylist.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                GotoMyListActivity(false);
+            }
+        });
+    }
+
+    @Override
+    public void excute(BaseActivity act, ResponseResult result, int flag) {
+        switch(flag){
+            case Config.TASK_LOGOUT_CUSTOMER:
+                UserStatus.customerLogout();
+                changeImageBanner();
+                break;
+        }
+    }
+
+    @Override
+    public boolean failedExcution(BaseActivity act, ResponseResult result, int flag) {
+        return false;
+    }
+
+    @Override
+    public void onBackPressed() {
+        MainService.promptExitApp();
+    }
+    
+}

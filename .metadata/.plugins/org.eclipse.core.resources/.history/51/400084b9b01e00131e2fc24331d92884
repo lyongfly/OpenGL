@@ -1,0 +1,141 @@
+
+package com.suryani.util;
+
+import com.quidsi.util.SiteUtil;
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.Version;
+import com.suryani.volley.executor.impl.CheckUpdateExecutor;
+
+import android.app.Activity;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.SystemClock;
+
+
+public class CheckUpdate {
+
+    private static final long DAY_TIME = 5 * 24 * 60 * 60 * 1000;
+  
+
+    public static void checkUpdate(BaseActivity act) {
+        String appVersion = getVersionName(act);
+        String os = Build.VERSION.RELEASE;
+        String platform = act.getString(getPlatform());
+        StringBuilder sb = new StringBuilder();
+        sb.append("&"+act.getString(R.string.appVersion)+"="+appVersion);
+        sb.append("&"+act.getString(R.string.platform)+"="+platform);
+        sb.append("&"+act.getString(R.string.osVersion)+"="+os);
+        Task task = new Task(Config.TASK_CHECK_UPDATE, null);
+        task.setExcutor(new CheckUpdateExecutor(sb.toString()));
+        MainService.addNewTask(task, act);
+    }
+
+    public static void checkUpdate(final Activity act,final Version version) {
+        if (!Util.parseBoolean(version.IsApplicationCurrent)){
+            if (Util.parseBoolean(version.IsApplicationBlocked)) {
+                int str_resid = R.string.upgrade;
+                if (null == version.UpgradeURL || "".equals(version.UpgradeURL)) {
+                    version.UpgradeURL = "http://" + SiteUtil.getApplicationSiteNameCom();
+                    str_resid = R.string.gotoweb;
+                }
+
+                OnClickListener PositiveButtonLisener = new OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+//                        Uri uri = Uri.parse(version.UpgradeURL);// res.getString(R.string.site_string)
+//                        Intent intent = new Intent();
+//                        intent.setAction("android.intent.action.VIEW");
+//                        intent.setData(uri);
+//                        act.startActivity(intent);
+                    }
+
+                };
+
+                DialogUtil.unCancelableOneButtonShowMessageDialog(act, version.UpgradeMessage,
+                        act.getString(str_resid), PositiveButtonLisener);
+
+            } else {
+                
+                String key_last_remind = act.getString(R.string.last_remind);
+                String key_last_remind_app_version = act.getString(R.string.last_remind_app_version);
+                
+                if (SystemClock.currentThreadTimeMillis() > ReviewAppUtil
+                        .getLongFromPrefer(key_last_remind) + DAY_TIME
+                        && Util.parseInt(version.UpgradeVersionNumber) > ReviewAppUtil
+                                .getIntFromPrefer(key_last_remind_app_version))
+                    threeButtonShowMessageDialogForCheckUpdate(act,version);
+            }
+        }
+    }
+
+    private static int getPlatform() {
+
+        return Config.isForAmazon ? R.string.amazon_platform: R.string.google_platform;
+        
+    }
+
+    private static String getVersionName(BaseActivity act) {
+        PackageManager packageManager = act.getPackageManager();
+        PackageInfo packInfo;
+        try {
+            packInfo = packageManager.getPackageInfo(act.getPackageName(), 0);
+            return String.valueOf(packInfo.versionCode);
+        } catch (Exception e) {
+            return "100";
+        }
+    }
+
+    private static void threeButtonShowMessageDialogForCheckUpdate(final Activity act,final Version version) {
+        String msg_btn_remindMe = act.getString(R.string.remind);
+        String message = version.UpgradeMessage;
+        String msg_btn_upgrade = act.getString(R.string.upgrade);
+        String msg_btn_never = act.getString(R.string.never);
+
+        OnClickListener leftListener = new OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String key_last_remind = act.getString(R.string.last_remind);
+                ReviewAppUtil.putLongInPrefer(key_last_remind, SystemClock.currentThreadTimeMillis());
+            }
+        };
+
+        OnClickListener midListener = new OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Uri uri = Uri.parse(version.UpgradeURL);// res.getString(R.string.site_string)
+                Intent intent = new Intent();
+                intent.setAction("android.intent.action.VIEW");
+                intent.setData(uri);
+                act.startActivity(intent);
+            }
+        };
+
+        OnClickListener rightListener = new OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String key_last_remind_app_version = act.getString(R.string.last_remind_app_version);
+                ReviewAppUtil.putIntInPrefer(key_last_remind_app_version,
+                        Util.parseInt(version.UpgradeVersionNumber));
+            }
+        };
+
+        DialogUtil.threeButtonShowMessageDialog(
+                act, SiteUtil.getApplicationSiteName(),
+                message,
+                msg_btn_remindMe, msg_btn_upgrade, msg_btn_never,
+                leftListener, midListener, rightListener);
+    }
+    
+}

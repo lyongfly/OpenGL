@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="1" key="org.eclipse.egit.ui.internal.clone.GitSelectWizardPageWizardSel"/>
+	<item value="true" key="CommitDialog.showUntracked"/>
+	<list key="CommitDialog.authorValues">
+		<item value="cd.Android louis.luo &lt;louis.luo@nstechs.com&gt;"/>
+	</list>
+	<list key="CommitDialog.committerValues">
+		<item value="cd.Android louis.luo &lt;louis.luo@nstechs.com&gt;"/>
+	</list>
+	<list key="RepositorySelectionPage.UsedUris">
+		<item value="ssh://cdandroid@git.suryani.cn:80/opt/repo/android.git"/>
+		<item value="ssh://cdandroid@git.suryani.cn:80/cdandroid@git.suryani.cn:80:/opt/repo/android.git"/>
+	</list>
+	<section name="org.eclipse.egit.ui.internal.dialogs.ResetTargetSelectionDialog.dialogBounds">
+		<item value="538" key="DIALOG_WIDTH"/>
+		<item value="8" key="DIALOG_Y_ORIGIN"/>
+		<item value="728" key="DIALOG_HEIGHT"/>
+		<item value="422" key="DIALOG_X_ORIGIN"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="GitImportWizard">
+	</section>
+	<section name="GitCommitMessageComponent">
+	</section>
+	<section name="org.eclipse.egit.ui.internal.dialogs.MergeTargetSelectionDialog.dialogBounds">
+		<item value="538" key="DIALOG_WIDTH"/>
+		<item value="8" key="DIALOG_Y_ORIGIN"/>
+		<item value="422" key="DIALOG_X_ORIGIN"/>
+		<item value="680" key="DIALOG_HEIGHT"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="org.eclipse.egit.ui.internal.dialogs.RebaseTargetSelectionDialog.dialogBounds">
+		<item value="538" key="DIALOG_WIDTH"/>
+		<item value="42" key="DIALOG_Y_ORIGIN"/>
+		<item value="422" key="DIALOG_X_ORIGIN"/>
+		<item value="496" key="DIALOG_HEIGHT"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="org.eclipse.egit.ui.internal.pull.PullResultDialog.dialogBounds">
+		<item value="951" key="DIALOG_WIDTH"/>
+		<item value="93" key="DIALOG_Y_ORIGIN"/>
+		<item value="557" key="DIALOG_HEIGHT"/>
+		<item value="216" key="DIALOG_X_ORIGIN"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="org.eclipse.egit.ui.internal.fetch.FetchResultDialog.dialogBounds">
+		<item value="616" key="DIALOG_WIDTH"/>
+		<item value="64" key="DIALOG_Y_ORIGIN"/>
+		<item value="383" key="DIALOG_X_ORIGIN"/>
+		<item value="463" key="DIALOG_HEIGHT"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="org.eclipse.egit.ui.internal.merge.MergeResultDialog.dialogBounds">
+		<item value="936" key="DIALOG_WIDTH"/>
+		<item value="216" key="DIALOG_Y_ORIGIN"/>
+		<item value="223" key="DIALOG_X_ORIGIN"/>
+		<item value="249" key="DIALOG_HEIGHT"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="org.eclipse.egit.ui.internal.push.PushResultDialog.dialogBounds">
+		<item value="666" key="DIALOG_WIDTH"/>
+		<item value="64" key="DIALOG_Y_ORIGIN"/>
+		<item value="358" key="DIALOG_X_ORIGIN"/>
+		<item value="463" key="DIALOG_HEIGHT"/>
+		<item value="1|微软雅黑|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|微软雅黑" key="DIALOG_FONT_NAME"/>
+	</section>
+</section>

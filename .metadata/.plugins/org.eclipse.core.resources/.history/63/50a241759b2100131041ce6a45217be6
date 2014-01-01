@@ -1,0 +1,89 @@
+package com.quidsi.soap.activity;
+
+import android.content.Intent;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import com.suryani.R;
+import com.suryani.activity.BaseHomeActivity;
+import com.suryani.activity.SettingActivity;
+import com.suryani.adapter.ShopPageAdapter;
+import com.suryani.crosssite.activity.SubNavigationActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.Navigation;
+import com.suryani.util.Config;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.impl.HomePageContentExecutor;
+
+public class HomePageActivity extends BaseHomeActivity {
+	
+	private ListView shopview;
+	private Navigation nav[];
+	private TextView emptyText;
+	private View footView;
+
+	@Override
+	public void init() {	
+		Task getNavigation = new Task(Config.TASK_GET_ALL_NAVIGATION_HOME,null);
+		getNavigation.setExcutor(new HomePageContentExecutor(getNavigation));
+		MainService.addNewTask(getNavigation, this);
+		showProgress(HomePageActivity.this, getIntent().getBooleanExtra("isFromLogo", false) ? 0 : 1);
+
+		emptyText = (TextView)findViewById(R.id.empty);
+		shopview = (ListView)findViewById(R.id.pubListView);
+
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if(nav == null || nav.length == 0) {
+			init();
+		}
+	}
+	
+	@Override
+	public void refresh(Object... param) {
+		super.refresh(param);
+		int option = (Integer) param[0];
+		switch(option) {
+		case Config.TASK_GET_ALL_NAVIGATION_HOME:
+			nav = (Navigation[])param[1]; 
+			if(nav != null) {
+				ShopPageAdapter adapter = new ShopPageAdapter(HomePageActivity.this);
+				adapter.setList(nav);
+				shopview.setAdapter(adapter);
+				shopview.setCacheColorHint(0);
+				shopview.setOnItemClickListener(itemclick);
+				
+				Util.setListViewHeightBasedOnChildren(shopview);
+				emptyText.setText("");
+			}
+			
+			
+			dismissProgress();
+			break;		
+		}	
+	}
+	
+	//Navigation click
+	private OnItemClickListener itemclick = new OnItemClickListener() {
+
+		@Override
+		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+			//logger.i("position==" + position + "::" + nav[position].Id);
+			Intent  intent = new Intent();
+			if (view == footView ) {
+				intent.setClass(HomePageActivity.this,  SettingActivity.class);
+			} else {
+				intent = new Intent(HomePageActivity.this, SubNavigationActivity.class);
+				intent.putExtra("navObject", nav[position]);
+			}
+			startActivity(intent);	
+		}
+	};
+}

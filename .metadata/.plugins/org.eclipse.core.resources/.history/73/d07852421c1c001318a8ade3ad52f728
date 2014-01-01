@@ -1,0 +1,181 @@
+
+package com.suryani.activity.cart;
+
+import com.quidsi.activity.CartButtonEnabledActivity;
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.activity.LoginActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.infer.CartActionExcution;
+import com.suryani.util.Config;
+import com.suryani.util.MyLogger;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.impl.cart.CheckOutPayPalExecutor;
+import com.suryani.volley.executor.impl.cart.GetPayPalExecutor;
+
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class WebViewActivity extends CartButtonEnabledActivity implements CartActionExcution{
+
+    private WebView webView;
+    private ProgressBar progressBar;
+    private Intent intent;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {    
+        super.onCreate(savedInstanceState);
+        getLayoutInflater().inflate(R.layout.product_review, mMainLayout);
+        intent = getIntent();
+        init();
+    }
+
+    @Override
+    public void init() {
+       
+        String title = intent.getStringExtra("title");
+        String url = intent.getStringExtra("url");
+        progressBar = (ProgressBar) findViewById(R.id.progressBar1);
+        
+        actionBar.setTitle(title);
+        webView = (WebView) findViewById(R.id.reviewWebView);
+        webView.setWebViewClient(webViewClient);
+        webView.getSettings().setBuiltInZoomControls(true);
+        webView.requestFocus();
+       
+        Intent intent = getIntent();
+        if (intent.getBooleanExtra("ispaypal", false)) {
+        	actionBar.setTitle(R.string.pay_with_paypal);
+            String selectedCardId = intent.getStringExtra("cardId");
+
+            Map<String, Object> param = new HashMap<String, Object>();
+            param.put("cardId", selectedCardId);
+            param.put("qstoken", CartPageActivity.getYourCart().QSToken);
+            param.put("ispaypal", true);
+
+            Task task = new Task(Config.TASK_PAYPAL, param);
+            task.setExcutor(new GetPayPalExecutor());
+            MainService.addNewTask(task,this);
+            showProgress();
+        } else {
+            webView.loadUrl(url);
+        }
+    }
+
+    private WebViewClient webViewClient = new WebViewClient() {
+
+        @Override
+        public void onLoadResource(WebView view, String url) {
+            System.out.println("11111onLoadResource : " + url);
+            super.onLoadResource(view, url);
+            if (url.indexOf("PayPalShoppingCartCheckOut!ReturnForShoppingCart.qs?") > -1){
+                gotoPaymentInfo(url);
+            }
+        }
+        
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            
+            if (url.indexOf("/ShopPage.qs") > -1) {
+               finish();
+            } else if (url.indexOf("PayPalShoppingCartCheckOut!ReturnForShoppingCart.qs?") > -1){
+                gotoPaymentInfo(url);
+            } else {
+               view.loadUrl(url);
+            }
+            return true;
+        }
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            MyLogger.log("onPageStarted url:"+url);
+            super.onPageStarted(view, url, favicon);
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+           
+            super.onPageFinished(view, url);
+            progressBar.setVisibility(View.GONE);
+        }
+
+    };
+
+    private void gotoPaymentInfo(String url){
+        HashMap<String,String> param = new HashMap<String,String>();
+        param.put("QSPayPalToken", getQSPayPalToken(url));
+        Task task = new Task(Config.TASK_PAYPAL_CHECKOUT, param);
+        task.setExcutor(new CheckOutPayPalExecutor());
+        MainService.addNewTask(task,WebViewActivity.this);
+    }
+    
+    @Override
+    public void refresh(Object... param) {
+        dismissProgress();
+        int index = (Integer) param[0];
+        switch (index) {
+            case Config.TASK_PAYPAL:
+            case Config.TASK_PAYPAL_CHECKOUT:
+                Util.dealResponseResult(this, (ResponseResult) param[1], this, LoginActivity.FROM_PAYMENT_FLAG, index);
+                break;
+        }
+    }
+
+    
+    private String getQSPayPalToken(String api){
+        String[] apiStrs = api.split("[?]");
+        String[] args = apiStrs[1].split("&");
+        String QSPayPalToken = null;
+        for(String arg:args){
+        	String[] nameAndValue = arg.split("=");
+            if(nameAndValue[0].equalsIgnoreCase("QSPayPalToken")){      
+                QSPayPalToken = nameAndValue[1];
+                break;
+            }
+        }
+        
+        return QSPayPalToken;
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressWarnings("deprecation")
+    @Override
+    public void excute(BaseActivity act, ResponseResult result, int flag) {
+        switch (flag) {
+            case Config.TASK_PAYPAL_CHECKOUT:
+                Intent intent = new Intent(act, PaymentInfoActivity.class);
+                setResult(Config.TASK_PAYPAL_CHECKOUT, intent);
+                finish();
+                break;
+            case Config.TASK_PAYPAL:
+                String url = result.Message;
+                WebSettings settings = webView.getSettings();
+                settings.setJavaScriptEnabled(true);
+                settings.setPluginsEnabled(true);
+                settings.setUseWideViewPort(true);
+                webView.loadUrl(url);
+                break;
+
+        }
+    }
+
+    @Override
+    public boolean failedExcution(BaseActivity act, ResponseResult result, int flag) {
+        return false;
+    }
+
+   
+}

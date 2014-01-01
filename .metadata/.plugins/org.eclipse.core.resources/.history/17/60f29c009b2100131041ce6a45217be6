@@ -1,0 +1,215 @@
+package com.quidsi.diapers.activity;
+
+import java.util.ArrayList;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import com.quidsi.diapers.R;
+import com.suryani.activity.BaseHomeActivity;
+import com.suryani.adapter.ShopPageAdapter;
+import com.suryani.babyregistry.util.BabyRegistryUtil;
+import com.suryani.crosssite.activity.NavigationActivity;
+import com.suryani.crosssite.activity.SubNavigationActivity;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.Navigation;
+import com.suryani.model.UserStatus;
+import com.suryani.util.Config;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.impl.HomePageContentExecutor;
+
+public class HomePageActivity extends BaseHomeActivity {
+	
+	private ListView shopview;
+	private Navigation nav[];
+	private TextView emptyText;
+	private View footViewSale,footViewBR,baby_registry;
+    private BabyRegistryUtil brUtil;
+    private boolean isCreateRun = false;
+    private ShopPageAdapter adapter;
+    private boolean hasRegistry = false;
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		brUtil = new BabyRegistryUtil();
+		baby_registry = this.findViewById(R.id.baby_registry);
+		isCreateRun = true;
+	}
+
+	@Override
+	public void init() {
+		Task getNavigation = new Task(Config.TASK_GET_ALL_NAVIGATION_HOME,null);
+		getNavigation.setExcutor(new HomePageContentExecutor(getNavigation));
+		MainService.addNewTask(getNavigation,this);
+		showProgress(HomePageActivity.this, getIntent().getBooleanExtra("isFromLogo", false) ? 0 : 1);
+		
+		emptyText = (TextView)findViewById(R.id.empty);
+		shopview = (ListView)findViewById(R.id.pubListView);
+		
+		if (shopview.getFooterViewsCount() == 0) {
+			setListViewFoot();
+		}
+		//setListMylist();
+	}
+	
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		hasRegistry = UserStatus.getInstance().isHasBabyRegistry();
+		if(nav == null || nav.length == 0){
+			init();
+		} else {
+			if (!isCreateRun) {
+				if(UserStatus.getInstance().getLoginStatus() && hasRegistry){
+					if(baby_registry.getVisibility() == View.GONE) {
+						baby_registry.setVisibility(View.VISIBLE);
+						shopview.removeFooterView(footViewBR);
+						footViewBR.setVisibility(View.GONE);
+						if(adapter != null) {
+							shopview.setAdapter(adapter);
+						}
+						Util.setListViewHeightBasedOnChildren(shopview);
+					}
+				} else {
+					if(baby_registry.getVisibility() == View.VISIBLE) {
+						removeBabyRegistry();
+					}
+				}
+			}
+		}
+		isCreateRun = false;
+	}
+
+	private void removeBabyRegistry() {
+		baby_registry.setVisibility(View.GONE);
+		shopview.removeFooterView(footViewSale);
+		shopview.removeFooterView(footViewBR);
+		setListViewFoot();
+		if (adapter != null) {
+			shopview.setAdapter(adapter);
+		}
+		Util.setListViewHeightBasedOnChildren(shopview);
+	}
+
+	@Override
+	public void refresh(Object... param) {
+		super.refresh(param);
+		int option = (Integer) param[0];
+		switch(option) {
+		case Config.TASK_GET_ALL_NAVIGATION_HOME:
+			nav = (Navigation[])param[1]; 
+			if (nav != null) {
+				nav = deleteSale(nav);
+				adapter = new ShopPageAdapter(HomePageActivity.this);
+				adapter.setList(nav);
+				shopview.setAdapter(adapter);
+				shopview.setCacheColorHint(0);
+				shopview.setOnItemClickListener(itemclick);
+				
+				Util.setListViewHeightBasedOnChildren(shopview);
+				emptyText.setText("");
+			}
+			dismissProgress();
+			break;
+		case Config.TASK_LOGOUT_CUSTOMER:
+			if (hasRegistry) {
+				removeBabyRegistry();
+			}
+			break;
+		}	
+	}
+
+	private Navigation[] deleteSale(Navigation[] myNav) {
+		ArrayList<Navigation> navList = new ArrayList<Navigation>();
+		Boolean isChange = false;
+		for(Navigation sunNav : myNav) {
+			if(sunNav!=null && "sale".equalsIgnoreCase(sunNav.Name)){
+				isChange = true;
+			}else{
+				navList.add(sunNav);
+			}
+		}
+		return isChange ? navList.toArray(new Navigation[0]) : myNav;
+	}
+	
+	//Navigation click
+	private OnItemClickListener itemclick = new OnItemClickListener() {
+
+		@Override
+		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+			Intent  intent = new Intent();
+			if(view == footViewBR) {
+				brUtil.action(HomePageActivity.this);  
+			} else {
+				if(view==footViewSale) {
+					intent.setClass(HomePageActivity.this, NavigationActivity.class);
+					intent.putExtra("title", "Sale");
+					intent.putExtra("shopWay", 4);
+				} else {	
+					if("Clothing".equals(nav[position].Name)) {
+						intent.setClass(HomePageActivity.this, NavigationActivity.class);
+						intent.putExtra("title", "Clothing");
+					} else {
+					    intent.setClass(HomePageActivity.this, SubNavigationActivity.class);
+					}
+					Config.isFromHomeBanner = false;
+					intent.putExtra("navObject", nav[position]);
+				}
+				startActivity(intent);	
+			}
+		}
+	};
+    
+	private void setListViewFoot(){
+		hasRegistry = UserStatus.getInstance().isHasBabyRegistry();
+		LayoutInflater inflater = LayoutInflater.from(this);		
+		
+		footViewSale = inflater.inflate(R.layout.list_cell_layout, null);
+		ImageView image = (ImageView) footViewSale.findViewById(R.id.row_shop_icon);
+		TextView name = (TextView)footViewSale.findViewById(R.id.rowDesc);
+		image.setImageResource(R.drawable.diapers_sale);
+		name.setText("Sale");
+		
+		shopview.addFooterView(footViewSale);
+
+		footViewBR = inflater.inflate(R.layout.list_cell_layout, null);
+		if(hasRegistry && UserStatus.getInstance().getLoginStatus()){
+			baby_registry.setVisibility(View.VISIBLE);
+			footViewBR.setVisibility(View.GONE);
+		}else{
+			baby_registry.setVisibility(View.GONE);
+			footViewBR.setVisibility(View.VISIBLE);
+		}
+		
+		initBabyRegistry(baby_registry,hasRegistry);
+		initBabyRegistry(footViewBR,hasRegistry);
+	}
+
+	private void initBabyRegistry(View view,boolean hasRegistry) {
+		ImageView image = (ImageView) view.findViewById(R.id.row_shop_icon);
+		TextView name = (TextView)view.findViewById(R.id.rowDesc);
+		image.setImageResource(R.drawable.baby_registry_nav);
+        name.setText("Baby Registry");
+        if(view == footViewBR && !hasRegistry){
+        	shopview.addFooterView(view);
+        }
+		view.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				brUtil.action(HomePageActivity.this);
+			}
+		});
+	}
+	
+}

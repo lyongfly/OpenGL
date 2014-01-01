@@ -1,0 +1,687 @@
+
+package com.suryani.activity.cart;
+
+import com.quidsi.activity.CartButtonEnabledActivity;
+import com.quidsi.activity.NavigationActivity;
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.activity.LoginActivity;
+import com.suryani.activity.MyAccountActivity;
+import com.suryani.adapter.cart.BillingAddressAdapter;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.CreditCard;
+import com.suryani.model.CustomerAddress;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.infer.CartActionExcution;
+import com.suryani.util.CartUtil;
+import com.suryani.util.Config;
+import com.suryani.util.DialogUtil;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.factory.ExecutorFactory;
+import com.suryani.volley.executor.impl.cart.GetCustomerInfoExecutor;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.TextWatcher;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class NewCreateCardActivity extends NavigationActivity implements CartActionExcution{
+
+    private EditText cardNumberEdit,
+    		cardTypeEdit,
+            securityCodeEdit,
+            expirationDateEdit;
+
+    private ListView billingAddressList;
+    private LinearLayout addNewLayout;
+    private Button addBillingButton;
+    private View lineView;
+    
+    private boolean isFromPayment = false, isFromPaymentInfo;
+    TextWatcher cardNumWatcher = new TextWatcher() {
+
+        int oldLength = 0;
+
+        @Override
+        public void afterTextChanged(Editable s) {
+
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before,
+                int count) {
+            int length = s.length();
+
+            if (length > oldLength) {
+                switch (length) {
+                    case 4:
+                    case 9:
+                    case 14:
+                        s = s + "-";
+                        cardNumberEdit.setText(s);
+                        cardNumberEdit.setSelection(s.length());
+                        break;
+                    case 18:
+                        if (Util.findCountCharInStr(s.toString(), '-') == 2) {
+                            securityCodeEdit.requestFocus();
+                        }
+                        break;
+                    case 19:
+                        securityCodeEdit.requestFocus();
+                        break;
+                }
+            }
+            else {
+                switch (length) {
+                    case 4:
+                    case 9:
+                    case 14:
+                        CharSequence sub = s.subSequence(0, length - 1);
+                        cardNumberEdit.setText(sub);
+                        cardNumberEdit.setSelection(sub.length());
+                        length--;
+                        break;
+                    case 11:
+                        if (Util.findCountCharInStr(s.toString(), '-') == 1) {
+                            CharSequence sub1 = s.subSequence(0, length - 1);
+                            cardNumberEdit.setText(sub1);
+                            cardNumberEdit.setSelection(sub1.length());
+                            length--;
+                        }
+                        break;
+                }
+
+            }
+
+            oldLength = length;
+        }
+    };
+
+    private TextWatcher dateWatcher = new TextWatcher() {
+
+        int oldLength = 0;
+
+        @Override
+        public void afterTextChanged(Editable s) {
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before,
+                int count) {
+            int length = s.length();
+
+            if (length > oldLength) {
+                switch (length) {
+                    case 2:
+                        s = s + "/";
+                        expirationDateEdit.setText(s);
+                        expirationDateEdit.setSelection(s.length());
+                        break;
+                    case 5:
+                        if (expirationDateEdit.isFocused()){
+                            imm = (InputMethodManager) expirationDateEdit.getContext()
+                                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+                            imm.hideSoftInputFromWindow(NewCreateCardActivity.this.getCurrentFocus()
+                                    .getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                        }
+                        break;
+                }
+            }
+            else {
+                switch (length) {
+                    case 2:
+                        CharSequence sub = s.subSequence(0, length - 1);
+                        expirationDateEdit.setText(sub);
+                        expirationDateEdit.setSelection(sub.length());
+                        length--;
+                        break;
+                }
+            }
+
+            oldLength = length;
+
+        }
+    };
+
+    private BillingAddressAdapter billingAddressAdapter;
+
+    private OnItemClickListener billingAddressListlistener = new OnItemClickListener() {
+
+        @Override
+        public void onItemClick(AdapterView<?> arg0, View arg1, int position,
+                long arg3) {
+            billingAddressAdapter.setSelectIndex(position);
+        }
+    };
+
+    private boolean isToEdit;
+
+    private boolean isFromCart;
+    
+    private boolean isSecurity;
+
+    private CreditCard creditCard;
+
+    private List<CustomerAddress> mergeList;
+
+    private OnFocusChangeListener secrityFocusListener = new OnFocusChangeListener() {
+
+        @Override
+        public void onFocusChange(View v, boolean hasFocus) {
+            if (hasFocus) {
+                String str = cardNumberEdit.getText().toString();
+                boolean is18and3 = false;
+                boolean is18and2 = false;
+
+                if (str.length() == 18 && Util.findCountCharInStr(str, '-') == 3) {
+                    is18and3 = true;
+                }
+                if (str.length() == 18 && Util.findCountCharInStr(str, '-') == 2) {
+                    is18and2 = true;
+                }
+
+                if (is18and3) {
+                    String[] marks = str.split("-");
+                    String newMark1 = marks[1] + marks[2].substring(0, 2);
+                    String newMark2 = marks[2].substring(2) + marks[3];
+                    String newMark = marks[0] + "-" + newMark1 + "-" + newMark2;
+                    cardNumberEdit.setText(newMark);
+                } else if (is18and2) {
+                    String[] marks = str.split("-");
+                    String newMark1 = marks[1].substring(0, 4);
+                    String newMark2 = marks[1].substring(4) + marks[2].substring(0, 2);
+                    String newMark3 = marks[2].substring(2);
+                    cardNumberEdit.setText(marks[0] + "-" + newMark1 + "-" + newMark2 + "-"
+                            + newMark3);
+                }
+            }
+
+        }
+
+    };
+
+    private InputMethodManager imm;
+
+    @Override
+    public void init() {
+
+    }
+
+    @SuppressWarnings({
+            "rawtypes", "unchecked"
+    })
+    @Override
+    public void refresh(Object... param) {
+        dismissProgress();
+        int flag = (Integer) param[0];
+        if (flag == Config.TASK_CUSTOMER_INFO_IN_PAYMENT) {
+            List list1 = (List) param[1];
+            if (list1 == null) {
+                return;
+            }
+            if (list1.get(0) instanceof ResponseResult) {
+                ResponseResult response = (ResponseResult) list1.get(0);
+                Util.dealResponseResult(this, response, this, LoginActivity.FROM_CART_FLAG,flag);
+            }else{
+                CustomerInfoActivity.shippingList = (List<CustomerAddress>) list1.get(1);
+                CustomerInfoActivity.cardList = (List<CreditCard>) list1.get(3);
+                CustomerInfoActivity.billList = (List<CustomerAddress>) list1.get(2);
+                mergeList = mergeTwoList(CustomerInfoActivity.billList,
+                        CustomerInfoActivity.shippingList);
+                billingAddressAdapter.setList(mergeList);
+                Util.setListViewHeightBasedOnChildren(billingAddressList);
+                if(isFromPayment){
+                    for(CreditCard cc : CustomerInfoActivity.cardList){
+                        boolean isPrimary = Boolean.parseBoolean(cc.IsPrimary);
+                        if (isPrimary){
+                            billingAddressAdapter.setSelectIndex(cc.BillingAddressId);
+                        }
+                    }
+                }
+                
+                billingAddressAdapter.notifyDataSetChanged();
+            }
+        } else {
+            ResponseResult result = (ResponseResult) param[1];
+            int logingFlag = isFromCart?LoginActivity.FROM_CART_FLAG:LoginActivity.FROM_HELP_CENTER_FLAG;
+            Util.dealResponseResult(this, result, this, logingFlag,flag);
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getLayoutInflater().inflate(R.layout.new_credit_card_layout, mMainLayout);
+        Intent i = getIntent();
+        
+        isToEdit = i.getBooleanExtra("isToEdit", false);
+        isFromPayment = i.getBooleanExtra("isFromPayment", false);
+        isFromCart = i.getBooleanExtra("isFromCartPage", false) || isFromPayment;
+        isFromPaymentInfo = i.getBooleanExtra("isFromPaymentInfo", false);
+        isSecurity = i.getBooleanExtra("isSecurity", false);
+        
+        actionBar.setTitle(getString(R.string.add_new_cc));
+        cardNumberEdit = (EditText) findViewById(R.id.card_number_edit);
+        cardNumberEdit.addTextChangedListener(cardNumWatcher);
+        cardNumberEdit.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        securityCodeEdit = (EditText) findViewById(R.id.security_code_edit);
+        securityCodeEdit.setFocusable(true);
+        securityCodeEdit.setOnFocusChangeListener(secrityFocusListener);
+
+        expirationDateEdit = (EditText) findViewById(R.id.expiration_date_edit);
+        expirationDateEdit.addTextChangedListener(dateWatcher);
+        
+        cardTypeEdit = (EditText) findViewById(R.id.card_type_name_edit);
+        lineView = findViewById(R.id.card_type_name_view);
+
+        billingAddressList = (ListView) findViewById(R.id.billing_address_list);
+        billingAddressList.setSelection(0);
+        billingAddressList.setCacheColorHint(0);
+
+        billingAddressAdapter = new BillingAddressAdapter(NewCreateCardActivity.this);
+        billingAddressAdapter.setFromCartPage(isFromCart);
+
+        
+        if (!isFromPayment) {
+            mergeList = mergeTwoList(CustomerInfoActivity.billList,
+                    CustomerInfoActivity.shippingList);
+            billingAddressAdapter.setList(mergeList);
+        }
+
+        billingAddressList.setAdapter(billingAddressAdapter);
+        billingAddressList.setOnItemClickListener(billingAddressListlistener);
+        Util.setListViewHeightBasedOnChildren(billingAddressList);
+        addBillingButton = (Button) findViewById(R.id.addBillingButton);
+        if (isToEdit) {
+            creditCard = (CreditCard) getIntent().getSerializableExtra("card");
+            actionBar.setTitle("Edit Credit Card ");
+            addBillingButton.setText("Save Card");
+
+            cardNumberEdit.setText(creditCard.CardNumber);
+            cardNumberEdit.setEnabled(false);
+            cardTypeEdit.setText(creditCard.CardTypeName);
+            cardTypeEdit.setVisibility(View.VISIBLE);
+            lineView.setVisibility(View.VISIBLE);
+            cardTypeEdit.setEnabled(false);
+            if (isSecurity){
+            	securityCodeEdit.setText("");
+            	securityCodeEdit.setVisibility(View.VISIBLE);
+            	findViewById(R.id.security_code_view).setVisibility(View.VISIBLE);
+            	securityCodeEdit.setFilters(new InputFilter[] {
+                        new InputFilter.LengthFilter(4)
+                });
+            	securityCodeEdit.requestFocus();
+             }else{
+            	securityCodeEdit.setText(creditCard.passWord);
+            	securityCodeEdit.setVisibility(View.GONE);
+            	findViewById(R.id.security_code_view).setVisibility(View.GONE);
+            	securityCodeEdit.setEnabled(false);
+            	if (!isFromPayment){
+            		billingAddressAdapter.setSelectIndex(creditCard.BillingAddressId);
+            	}
+            	expirationDateEdit.requestFocus();
+            }
+            //
+            
+            String expireDateString = creditCard.ExpireDate.replace("/20", "/");
+            expirationDateEdit.setText(expireDateString);
+            
+        } else {
+        	cardTypeEdit.setVisibility(View.GONE);
+        	lineView.setVisibility(View.GONE);
+            securityCodeEdit.setFilters(new InputFilter[] {
+                    new InputFilter.LengthFilter(4)
+            });
+            showIMM();
+        }
+
+        addNewLayout = (LinearLayout) findViewById(R.id.add_new_layout);
+        addNewLayout.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(NewCreateCardActivity.this,
+                        CreateCustomerAddressActivity.class);
+                intent.putExtra("requestCode", 3);
+                if (isFromCart) {
+                    intent.putExtra("isFromCartPage", true);
+                }
+                startActivityForResult(intent, 0);
+            }
+        });
+
+        addNewLayout.requestFocus();
+
+        addBillingButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                if (!messageVerification()) {
+                    return;
+                }
+                doCardTask();
+            }
+
+        });
+
+        if (isFromPayment) {
+            Task task = new Task(Config.TASK_CUSTOMER_INFO_IN_PAYMENT, null);
+            task.setExcutor(new GetCustomerInfoExecutor());
+            MainService.addNewTask(task,this);
+            showProgress();
+        }
+       
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        CustomerAddress addr = null;
+
+        try {
+
+            switch (resultCode) {
+                case Config.TASK_CUSTOMER_ADD_ADDRESS:
+                    addr = (CustomerAddress) data
+                            .getSerializableExtra("CustomerAddress");
+                    addBillingAddress(CustomerInfoActivity.billList, addr);
+                    billingAddressAdapter.setSelectAddress(addr);
+                    Util.setListViewHeightBasedOnChildren(billingAddressList);
+                    break;
+                case Config.TASK_CUSTOMER_EDIT_BILLING_ADDRESS:
+                case Config.TASK_CUSTOMER_EDIT_ADDRESS:
+                    addr = (CustomerAddress) data.getSerializableExtra("CustomerAddress");
+                    replaceAddressInList(addr);
+                    billingAddressAdapter.replace(addr.position, addr);
+                    break;
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+
+    }
+
+    private void replaceAddressInList(CustomerAddress addr) {
+
+        CustomerAddress temp = mergeList.get(addr.position);
+        List<CustomerAddress> tempList = null;
+
+        if ("S".equals(addr.AddressType)) {
+            tempList = CustomerInfoActivity.shippingList;
+        } else {
+            tempList = CustomerInfoActivity.billList;
+        }
+
+        int index = -1;
+
+        for (int i = 0; i < tempList.size(); i++) {
+            CustomerAddress addr0 = tempList.get(i);
+            if (addr0.AddressId.equals(temp.AddressId)) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index != -1) {
+            tempList.set(index, addr);
+        }
+
+    }
+
+    private void addBillingAddress(List<CustomerAddress> list, CustomerAddress addr) {
+
+        for (CustomerAddress addr1 : list) {
+            if (addr1.selected) {
+                addr1.selected = false;
+                break;
+            }
+        }
+
+        addr.selected = true;
+
+        list.add(addr);
+    }
+
+    private boolean messageVerification() {
+
+        int cardNumberLength = cardNumberEdit.getText().toString().trim().length();
+        if (!(cardNumberLength == 17 || cardNumberLength == 19) && !isToEdit) {
+            DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.integralcardnumber);
+            return false;
+        }
+
+        int codeLength = securityCodeEdit.getText().toString().trim().length();
+        if (codeLength != 3 && codeLength != 4 && !isToEdit) {
+            DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.integralsecuritycode);
+            return false;
+        }
+        if (codeLength != 3 && codeLength != 4 && isSecurity){
+        	DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.integralsecuritycode);
+            return false;
+        }
+
+        String dateStr = "";
+        String[] date = null;
+        dateStr = expirationDateEdit.getText().toString();
+        if ("".equals(dateStr) || dateStr.length()<5) {
+            DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.uexpireddate);
+            return false;
+        }
+        for (int i=0; i<dateStr.length(); i++){
+            if (i==2){
+             if (dateStr.charAt(i) != '/'){
+              DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.uexpireddate);
+              return false;
+             }
+            }else{
+             if (!Character.isDigit(dateStr.charAt(i))){
+              DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.uexpireddate);
+              return false;
+             }
+            }
+           }
+
+        date = dateStr.split("/");
+       
+        String monthText = date[0];
+        String yearText = date[1];
+
+        long time = System.currentTimeMillis();
+        Calendar mCalendar = Calendar.getInstance();
+        mCalendar.setTimeInMillis(time);
+        int nMonth = mCalendar.get(Calendar.MONTH) + 1;
+        int nYear = mCalendar.get(Calendar.YEAR);
+        int month = Integer.parseInt(monthText);
+        int year = Integer.parseInt(yearText) + 2000;
+
+        if (year < nYear || (year == nYear && month < nMonth)) {
+            DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.cardexpired);
+            return false;
+        }
+
+        if (billingAddressAdapter.getSelectAddress() == null) {
+            DialogUtil.ToastShow(NewCreateCardActivity.this, R.string.choose_address);
+            return false;
+        }
+
+        if (billingAddressAdapter.getSelectAddress().AddressType.equals("S")) {
+
+            CustomerAddress addr = billingAddressAdapter.getSelectAddress();
+
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put("name", addr.Name);
+            map.put("add1", addr.Addressline1);
+            map.put("add2", addr.Addressline2);
+            map.put("city", addr.City);
+            map.put("state", addr.State);
+            map.put("zipcode", addr.Zipcode);
+            map.put("phone", addr.PhoneNumber);
+            map.put("addresstype", "B");
+
+            Task task = new Task(Config.TASK_CUSTOMER_ADD_ADDRESS_NEW, map);
+            task.setExcutor(ExecutorFactory.createUpdateAddressExecutor(task));
+            MainService.addNewTask(task,this);
+            showProgress();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private List<CustomerAddress> mergeTwoList(List<CustomerAddress> billinglist,
+            List<CustomerAddress> customerlist) {
+
+        ArrayList<CustomerAddress> mergeList = new ArrayList<CustomerAddress>();
+
+        mergeList.addAll(billinglist);
+        mergeList.addAll(customerlist);
+
+        return mergeList;
+    }
+
+    private void doCardTask() {
+        //
+        CreditCard card = new CreditCard();
+        card.CardNumber = cardNumberEdit.getText().toString().replace("-", "");
+        card.passWord = securityCodeEdit.getText().toString();
+        // %2F
+        card.ExpireDate = expirationDateEdit.getText().toString().replace("/", "%2F20");
+        card.BillingAddressId = billingAddressAdapter.getSelectAddress().AddressId;
+
+        int config = 0;
+        
+        if (isToEdit) {
+            config = Config.TASK_EDIT_CREDITECARD;
+            card.CreditCardId = creditCard.CreditCardId;
+            card.passWord = "";
+            if (isSecurity){
+            	 card.passWord = securityCodeEdit.getText().toString();
+            }
+        } else {
+            config = Config.TASK_ADD_CREDITECARD;
+        }
+
+        HashMap<String, CreditCard> param1 = new HashMap<String, CreditCard>();
+        param1.put("card", card);
+
+        Task task = new Task(config, param1);
+        task.setExcutor(ExecutorFactory.createUpdateCreditCardExecutor(task));
+        MainService.addNewTask(task,this);
+
+        showProgress();
+    }
+
+    private void showIMM() {
+
+        imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                imm.showSoftInput(cardNumberEdit, InputMethodManager.SHOW_IMPLICIT);
+            }
+        }, 800);
+
+    }
+
+    @Override
+    public void excute(BaseActivity act, ResponseResult result, int flag) {
+        switch (flag)
+        {
+            case Config.TASK_ADD_CREDITECARD:
+
+                Class<?> clazz = null;
+                int resultCode = 0;
+                if (isFromPayment) {
+                    clazz = ReviewListActivity.class;
+                    resultCode = CartUtil.CARD_REQUEST_CODE;
+                } else if (isFromPaymentInfo){
+                    clazz = PaymentInfoActivity.class;
+                    resultCode = Config.TASK_ADD_CREDITECARD;
+                }else {
+                    clazz = CustomerInfoActivity.class;
+                    resultCode = 100;
+                }
+
+                Intent intent0 = new Intent(NewCreateCardActivity.this,
+                        clazz);
+                intent0.putExtra("cardId", result.Message);
+                setResult(resultCode, intent0);
+                finish();
+                break;
+            case Config.TASK_CUSTOMER_EDIT_ADDRESS:
+
+                break;
+            case Config.TASK_EDIT_CREDITECARD:
+                if (!isFromPayment){
+                    DialogUtil
+                            .ToastShow(NewCreateCardActivity.this, R.string.edit_card_success);
+                    intent0 = new Intent(NewCreateCardActivity.this,
+                            MyAccountActivity.class);
+                    intent0.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    intent0.putExtra("isFromCustomer", true);
+                    startActivity(intent0);
+                }else{
+                    Intent intent1 = new Intent(NewCreateCardActivity.this,
+                            ReviewListActivity.class);
+                    intent1.putExtra("cardId", result.Message);
+                    setResult(CartUtil.CARD_REQUEST_CODE, intent1);
+                }
+                finish();
+                break;
+            case Config.TASK_CUSTOMER_ADD_ADDRESS_NEW:
+
+                CustomerAddress addr = billingAddressAdapter.getSelectAddress();
+                addr.AddressType = "B";
+                addr.AddressId = result.Message;
+                addBillingAddress(CustomerInfoActivity.billList, addr);
+                billingAddressAdapter.notifyDataSetChanged();
+                Util.setListViewHeightBasedOnChildren(billingAddressList);
+
+                doCardTask();
+                break;
+            default:
+                break;
+         }
+    }
+
+    @Override
+    public boolean failedExcution(BaseActivity act, ResponseResult result, int flag) {
+       
+        return false;
+    }
+}

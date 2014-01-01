@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/home_page_easy_reorder_bg"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="15.0dip" >
+
+        <ImageButton
+            android:id="@+id/btn_shop_our_sites"
+            android:layout_width="0.0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/home_page_easyreorder_selector"
+            android:src="@drawable/shopsites_button"
+            android:contentDescription="@null"
+            android:layout_marginRight="5.0dip"/>
+
+        <ImageButton
+            android:id="@+id/btn_easy_reorder"
+            android:layout_width="0.0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/home_page_easyreorder_selector"
+            android:src="@drawable/easyreorder_button"
+            android:contentDescription="@null"
+            android:layout_marginLeft="5.0dip"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1.0dip"
+        android:background="@color/greyheadercolor" />
+</LinearLayout>

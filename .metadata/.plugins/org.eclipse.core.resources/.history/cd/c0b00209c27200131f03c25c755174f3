@@ -1,0 +1,58 @@
+
+package com.lyong.opengl;
+
+import android.app.Activity;
+import android.opengl.GLSurfaceView;
+import android.os.Bundle;
+import android.view.KeyEvent;
+
+import com.lyong.opengl.renderer.AbstractRenderer;
+import com.lyong.opengl.renderer.MyLineStripRenderer;
+import com.lyong.opengl.view.MyGLSurfaceView;
+
+public class MainActivity extends Activity {
+
+    private AbstractRenderer myRenderer;
+    private MyGLSurfaceView myGlSurfaceView;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        myGlSurfaceView = new MyGLSurfaceView(this);
+        myRenderer = new MyTriangleStripRenderer();
+        
+        myGlSurfaceView.setRenderer(myRenderer);
+        //GLSurfaceView.RENDERMODE_CONTINUOUSLY 持续渲染（默认）
+        //GLSurfaceView.RENDERMODE_WHEN_DIRTY 脏渲染，命令渲染
+        myGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        setContentView(myGlSurfaceView);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_UP:
+                
+                break;
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+                            
+                break;
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                
+                break;
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+                
+                break;
+            default:
+                break;
+        }
+        
+        //请求渲染和咱渲染配合使用
+        myGlSurfaceView.requestRender();
+        
+        return super.onKeyDown(keyCode, event);
+    }
+    
+}

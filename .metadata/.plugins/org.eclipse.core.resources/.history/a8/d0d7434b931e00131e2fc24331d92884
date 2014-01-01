@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.suryani.widget.HomeScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@id/scroll_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:scrollbars="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background"
+        android:orientation="vertical" >
+
+        <include
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            layout="@layout/banner_layout" />
+        
+
+        <include
+            android:id="@+id/baby_registry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            layout="@layout/home_navigation_row"
+            android:visibility="gone" />
+
+        <include
+            android:visibility="gone"
+            android:id="@+id/list_mylist"
+            layout="@layout/home_navigation_row" />
+
+        <ListView
+            android:id="@+id/pubListView"
+            style="@style/list_view_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="100dp"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/refresh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/bluesuperlink"
+            android:textSize="20sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</com.suryani.widget.HomeScrollView>

@@ -1,0 +1,713 @@
+
+package com.suryani.activity.cart;
+
+import com.quidsi.activity.CartButtonEnabledActivity;
+import com.quidsi.util.SiteUtil;
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.activity.LoginActivity;
+import com.suryani.activity.pdp.ProductDetailPageActivity;
+import com.suryani.adapter.cart.NewReviewCartAdapter;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.Cart;
+import com.suryani.model.CreditCard;
+import com.suryani.model.CustomerAddress;
+import com.suryani.model.PayPal;
+import com.suryani.model.Payment;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.ShippingRestrictionItem;
+import com.suryani.model.YourCart;
+import com.suryani.model.infer.CartActionExcution;
+import com.suryani.model.infer.Info;
+import com.suryani.model.infer.Items;
+import com.suryani.response.CustomerResponse;
+import com.suryani.util.CartUtil;
+import com.suryani.util.Config;
+import com.suryani.util.DialogUtil;
+import com.suryani.util.ReviewAppUtil;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.factory.ExecutorFactory;
+import com.suryani.volley.executor.impl.cart.CheckOutOrderReviewExecutor;
+import com.suryani.volley.executor.impl.cart.GetDefaultPaymentExecutor;
+import com.suryani.volley.executor.impl.cart.GetQSTokenExecutor;
+import com.suryani.volley.executor.impl.cart.GetReviewExecutor;
+import com.suryani.volley.executor.impl.cart.RemoveCartSampleItemExecutor;
+
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Html;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ExpandableListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ReviewListActivity extends NavigationActivity implements CartActionExcution{
+
+    private ExpandableListView reviewList;
+    private NewReviewCartAdapter reviewCartAdapter;
+    private Button checkOutButton;
+    private TextView addCartPriceText;
+    private List<Cart> listCartItem;
+    private CartUtil cartUtil;
+    private ArrayList<Items> promoList;
+    private YourCart yourCart;
+    private boolean isOnlyNeedCheckCVV2;
+    private boolean hasCard;
+    private CartUtil.PaymentViewHolder paymentViewHolder;
+    private CreditCard card;
+    private CustomerAddress bill;
+    private CustomerAddress address;
+    private boolean hasPayment;
+    private View footerView;
+    private RelativeLayout placeOrderLayout;
+    private Payment payment;
+    private boolean isOnlyPaymentChange;
+    private boolean hasAddress;
+    private ArrayList<ShippingRestrictionItem> srList;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getLayoutInflater().inflate(R.layout.review_list, mMainLayout);
+        cartUtil = new CartUtil(this);
+        cartUtil.setPromoDelFlag(Config.TASK_DEL_PROMOCODE_IN_REVIEW);
+        cartUtil.setPromoReApplyFlag(Config.TASK_GET_REVIEW_PROMO_REAPPLY_IN_REVIW);
+        
+        initView();
+        init();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    private void initView() {
+        placeOrderLayout = (RelativeLayout) findViewById(R.id.cartLayout);
+        checkOutButton = (Button) findViewById(R.id.checkOutButton);
+        checkOutButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+            	boolean needcheck = checkCVV2(card, bill,payment);
+                if(!needcheck){
+                    setViewEnable(false);
+                    Map<String, String> param = new HashMap<String, String>();
+                    param.put("qsToken", CartPageActivity.getYourCart().QSToken);
+                    Task task = new Task(Config.TASK_GET_REVIEW_CHECKOUT, param);
+                    task.setExcutor(new CheckOutOrderReviewExecutor());
+                    MainService.addNewTask(task,ReviewListActivity.this);
+                    showProgress();
+                }
+            }
+        });
+
+        addCartPriceText = (TextView) findViewById(R.id.addCartPrice);
+        cartUtil.setCheckOutPrice(addCartPriceText);
+        reviewList = (ExpandableListView) findViewById(R.id.review_list);
+        reviewList.setCacheColorHint(0);
+        reviewList.setChildDivider(getResources().getDrawable(R.drawable.gray));
+        reviewList.setDividerHeight(1);
+        reviewList.addHeaderView(cartUtil.getHeaderView(this));
+        footerView = cartUtil.getFooterLayout(Config.TASK_GET_REVIEW_PROMO_IN_REVIEW);
+        reviewList.addFooterView(footerView);
+        paymentViewHolder = cartUtil.getPaymentViewHolder();
+        reviewList.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+			
+			@Override
+			public boolean onChildClick(ExpandableListView parent, View v,
+					int groupPosition, int childPosition, long id) {
+				
+				String productId = ((Cart)reviewCartAdapter.getChild(groupPosition, childPosition)).ProductId;
+				String SKU = ((Cart)reviewCartAdapter.getChild(groupPosition, childPosition)).SKU;
+				String CatalogCode = ((Cart)reviewCartAdapter.getChild(groupPosition, childPosition)).CatalogCode;
+				Intent intent = new Intent(ReviewListActivity.this,ProductDetailPageActivity.class);
+				intent.putExtra("productId", productId);
+				intent.putExtra("SKU", SKU);
+				intent.putExtra("CatalogId", SiteUtil.getCatalogIdByName(CatalogCode));
+				startActivity(intent);
+				
+				return false;
+			}
+		});
+    }
+
+    @Override
+    public void init() {
+        if (CartPageActivity.getYourCart().QSToken == null
+                || "".equals(CartPageActivity.getYourCart().QSToken)) {
+
+            requestQstoken();
+           
+        }else{
+            if(!hasPayment)
+              requestPaymentInfo();
+            else
+              requestReviewOrderInfo(); 
+        }
+        showProgress();
+    }
+
+    @SuppressWarnings({
+            "unchecked", "rawtypes"
+    })
+    @Override
+    public void refresh(Object... param) {
+
+        int flag = (Integer) param[0];
+        setViewEnable(true);
+        switch (flag) {
+            case Config.TASK_GET_REVIEW_ALL:
+                dismissProgress();
+                if (param[1] instanceof ResponseResult) {
+                    Util.dealResponseResult(this, (ResponseResult) param[1], this,
+                            LoginActivity.FROM_CART_FLAG, flag);
+                } else {
+                    Map<String, Object> map = (Map<String, Object>) param[1];
+                    insertData(map);
+                    if (!isOnlyNeedCheckCVV2 && !isOnlyPaymentChange){
+                        checkCVV2(card, bill, payment);
+                    }
+                }
+                break;
+
+            case Config.TASK_GET_REVIEW_CHECKOUT:
+            case Config.TASK_REMOVE_CART_IN_PAYMENT:
+            case Config.TASK_REMOVE_CART_SAMPLE_ITEM:
+            case Config.TASK_GET_REVIEW_PROMO_IN_REVIEW:
+            case Config.TASK_GET_REVIEW_PROMO_REAPPLY_IN_REVIW:
+            case Config.TASK_DEL_PROMOCODE_IN_REVIEW:
+                Util.dealResponseResult(this, (ResponseResult) param[1], this, LoginActivity.FROM_PAYMENT_FLAG, flag);
+                break;
+            case Config.TASK_GET_QSTOKEN:
+                if (param[1] instanceof ResponseResult) {
+                    Util.dealResponseResult(this, (ResponseResult) param[1], null, LoginActivity.FROM_PAYMENT_FLAG, flag);
+                } else {
+                    YourCart yc = (YourCart) param[1];
+                    if (yc != null && !"".equals(yc.QSToken)) {
+                        CartPageActivity.getYourCart().QSToken = yc.QSToken;
+                        init();
+                    } else {
+                        DialogUtil.OneButtonShowMessageDialog(getContext(), R.string.require_failed);
+                    }
+                }
+                break;
+            case Config.TASK_PAYMENT_DEFAULT:
+                if(param[1] instanceof ResponseResult){
+                      Util.dealResponseResult(this, (ResponseResult) param[1], this, LoginActivity.FROM_PAYMENT_FLAG, 0);
+                }else{
+                    List list = (List) param[1];
+                    if(isOnlyPaymentChange){
+                        if(!isOnlyNeedCheckCVV2){
+                            refreshPaymentMessage(list); 
+                        }else{
+                            payment = (Payment) list.get(3);
+                            boolean isNeedcheck = checkCVV2(card, bill,payment);
+                            if(!isNeedcheck){
+                                checkPaymentInfo(payment);
+                            }
+                            isOnlyNeedCheckCVV2 = false;
+                        }
+                        isOnlyPaymentChange = false;
+                        dismissProgress();
+                    }else{
+                        hasPayment = refreshPaymentMessage(list);
+                        if(hasPayment){
+                            requestReviewOrderInfo();
+                        }else{
+                            dismissProgress();
+                        } 
+                    }
+                }
+                
+                break;
+            case Config.TASK_CUSTOMER_SELECT_CREDITCARD:
+                card = (CreditCard) param[1];
+                setHasCard(hasAddress);
+                bill = cartUtil.getBillingAddress(card);
+                setCreditCardMessage(card);
+                setBillAddressMessage(bill);
+                break;
+            case Config.TASK_CUSTOMER_SELECT_ADDRESS:
+                address = (CustomerAddress) param[1];
+                setCustomerAddressMessage(address);
+                break;
+        }
+    }
+
+    protected void setHasCard(boolean hasAddress) {
+        if(card != null){
+            hasCard = true;
+            cartUtil.setSelectedCardId(card.CreditCardId);
+        }else{
+            hasCard = false;
+            if(hasAddress)
+               cartUtil.gotoPaymentInfo();
+        }
+        cartUtil.setHasCard(hasCard);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void insertData(Map<String, Object> map) {
+        
+        if (map != null) {
+            listCartItem = (List<Cart>) map.get("cartList");
+            yourCart = (YourCart) map.get("yourCart");
+            promoList = (ArrayList<Items>) map.get("promoList");
+
+            cartUtil.setPromoList(promoList);
+            if (yourCart != null) {
+                cartUtil.setCartInfo(yourCart,R.array.review_footer_attrs);
+                
+                cartUtil.showErrorMessage(yourCart.ErrorMessages,reviewList);
+            
+            }
+            
+            reviewList.setDividerHeight(1);
+            footerView.setVisibility(View.VISIBLE);
+            placeOrderLayout.setVisibility(View.VISIBLE);
+        }else{
+            reviewList.setDividerHeight(0);
+            footerView.setVisibility(View.GONE);
+            placeOrderLayout.setVisibility(View.INVISIBLE);
+        }
+        
+        initReviewAdapter();
+    }
+
+    protected void initReviewAdapter() {
+        if (listCartItem == null || listCartItem.size() == 0){
+            if (hasPayment)
+                this.GotoCartActivity();
+            else {
+                listCartItem = new ArrayList<Cart>();
+            }
+        }else{
+            if (reviewCartAdapter == null) {
+                reviewCartAdapter = new NewReviewCartAdapter(this, listCartItem);
+                reviewList.setAdapter(reviewCartAdapter);
+                reviewList.setCacheColorHint(0);
+                reviewList.setGroupIndicator(null);
+                
+            } else {
+                reviewCartAdapter.setBaseList(listCartItem);
+                reviewCartAdapter.dataChanged();
+            }
+            
+            int groupCount = reviewCartAdapter.getGroupCount();
+            for (int i = 0; i < groupCount; i++) {
+                reviewList.expandGroup(i);
+            } 
+        } 
+       
+    }
+
+    private void diapersOrderLogic(final ResponseResult result) {
+
+    	CartButtonEnabledActivity.getCartQuantity();
+    	if (result == null){
+    		return;
+    	}
+     
+        android.content.DialogInterface.OnClickListener cancelListener = new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        };
+        android.content.DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+               
+                if (result.MessageCode.equals("1")){
+                	Intent intent = new Intent(ReviewListActivity.this, CreateCustomerAddressActivity.class);
+	                intent.putExtra("isFromPayment", true);
+	                intent.putExtra("address", bill);
+	                intent.putExtra("isToEdit", true);
+	                startActivityForResult(intent, CartUtil.SHIPPING_REQUEST_CODE);
+                }  else if (result.MessageCode.equals("3")){
+                	cartUtil.gotoPaymentInfo();
+                } else if (result.MessageCode.equals("8")){
+                	cartUtil.gotoPaymentInfo();
+                } else if (result.MessageCode.equals("4")){
+                	/*Intent request = new Intent(ReviewListActivity.this,
+                            NewCreateCardActivity.class);
+                    request.putExtra("isToEdit", true);
+                    request.putExtra("isFromPayment", true);
+                    request.putExtra("card", card);
+                    startActivityForResult(request, 97);*/
+                	cartUtil.gotoPaymentInfo();
+                } else if (result.MessageCode.equals("2")){
+                	Intent request = new Intent(ReviewListActivity.this,
+                            NewCreateCardActivity.class);
+                    request.putExtra("isToEdit", true);
+                    request.putExtra("isSecurity", true);
+                    request.putExtra("isFromPayment", true);
+                    request.putExtra("card", card);
+                    startActivityForResult(request, 97);
+                } else if (result.MessageCode.equals("6")){
+                	cartUtil.gotoPaymentInfo();
+                } else{
+                	
+                }
+                
+            }
+        };
+        //Success,AvsFail,Cvv2Fail,CcDeclined,CcExpired,DupTransaction,
+        //CardNumberInvalid,Exception,OtherFail,NotSet
+        if (result.MessageCode.equals("1")){
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_avs_mismatch,
+        			errorListener, "Update", cancelListener, "Cancel");
+        } else if (result.MessageCode.equals("3")){
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_card_declined,
+        			errorListener, "Change", cancelListener, "Cancel");
+        } else if (result.MessageCode.equals("8")){
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_card_duplicate_transactions,
+        			errorListener, "Change", cancelListener, "Cancel");
+        } else if (result.MessageCode.equals("4")){
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_card_expired,
+        			errorListener, "Change", cancelListener, "Cancel");
+        } else if (result.MessageCode.equals("2")){
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_security_code,
+        			errorListener, "Update", cancelListener, "Cancel");
+        } else if (result.MessageCode.equals("6")){
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_invalid_card_number,
+        			errorListener, "Change", cancelListener, "Cancel");
+        }/* else{
+        	DialogUtil.TwoButtonShowMessageDialog(ReviewListActivity.this, R.string.order_failed,
+                rightListener, "Call Us", leftListener, "Ok");
+        }*/
+    }
+
+    private void requestQstoken(){
+        Task task = new Task(Config.TASK_GET_QSTOKEN, null);
+        task.setExcutor(new GetQSTokenExecutor());
+        MainService.addNewTask(task,this);
+    }
+    
+    private void requestReviewOrderInfo(){
+        Map<String, String> param = new HashMap<String, String>();
+        param.put("qsToken", CartPageActivity.getYourCart().QSToken);
+
+        Task task = new Task(Config.TASK_GET_REVIEW_ALL, param);
+        task.setExcutor(new GetReviewExecutor());
+        MainService.addNewTask(task,this);
+    }
+    
+    private void requestPaymentInfo(){
+        HashMap<String, String> param = new HashMap<String, String>();
+        param.put("qsToken", CartPageActivity.getYourCart().QSToken);
+        Task task = new Task(Config.TASK_PAYMENT_DEFAULT, param);
+        task.setExcutor(new GetDefaultPaymentExecutor());
+        MainService.addNewTask(task,this);
+    }
+
+    
+    @SuppressWarnings("rawtypes")
+    private boolean refreshPaymentMessage(List list) {
+        if (list == null) {
+            return true;
+        }
+        address = (CustomerAddress) list.get(0);
+        hasAddress = setCustomerAddressMessage(address);
+
+        payment = (Payment) list.get(3);
+        // default card
+        card = (CreditCard) list.get(2);
+        // bill address
+        bill = (CustomerAddress) list.get(1);
+        
+        cartUtil.setHasPayPal(Util.parseBoolean(payment.HasPayPal));
+        
+        if(cartUtil.isHasPayPal()){
+            PayPal paypal = (PayPal) list.get(4);
+            setPayPal(paypal);
+        }else{
+            setHasCard(hasAddress);
+            setCreditCardMessage(card);
+            setBillAddressMessage(bill);
+        }
+        
+        checkPaymentInfo(payment);
+        
+        return hasAddress && (hasCard || Util.parseBoolean(payment.HasPayPal));
+    }
+
+    protected void checkPaymentInfo(Payment payment) {
+        if (payment != null) {
+            if (payment.RemoveMessage != null && !payment.RemoveMessage.equals("")) {
+                DialogUtil.OneButtonShowMessageDialog(this, payment.RemoveMessage);
+            }
+            if (payment.ShippingRestrictionItems != null && !"".equals(payment.ShippingRestrictionItems)) {
+                srList = new CustomerResponse()
+                        .getShippingRestrictionItems(payment.ShippingRestrictionItems);
+                showShippingRestriction(srList,false);
+            }
+           
+        }
+    }
+
+    protected boolean checkCVV2(CreditCard card, CustomerAddress bill, Payment payment) {
+        boolean needCheck = false;
+        if(payment != null){
+           needCheck = Util.parseBoolean(payment.IsNeedCVV2Hopup);
+           
+           if (needCheck) {
+               gotoCvv2(card, bill);
+           }
+       }
+       return needCheck;
+    }
+
+    protected void gotoCvv2(CreditCard card, CustomerAddress bill) {
+        gotoCvv2(card,bill,false);
+    }
+    
+    protected void gotoCvv2(CreditCard card, CustomerAddress bill,boolean isCheckOut) {
+        Intent intent = new Intent(this, CVV2Activity.class);
+        intent.putExtra("card", card);
+        intent.putExtra("bill", bill);
+        intent.putExtra("isCheckOut", isCheckOut);
+        startActivityForResult(intent, 0);
+    }
+    
+    private boolean setCustomerAddressMessage(CustomerAddress add) {
+        if (add != null) {
+
+            paymentViewHolder.shipLayout.setVisibility(View.VISIBLE);
+            cartUtil.setSelectedAddressId(add.AddressId);
+            paymentViewHolder.shipName.setText(add.Name);
+            Util.setMutiplesLineText(paymentViewHolder.shipAdd1,add,2,5);
+            paymentViewHolder.addressText.setVisibility(View.INVISIBLE);
+            return true;
+        } else {
+            paymentViewHolder.shipLayout.setVisibility(View.GONE);
+            paymentViewHolder.addressText.setVisibility(View.VISIBLE);
+            Intent intent = new Intent(this, CreateCustomerAddressActivity.class);
+            intent.putExtra("isFromPayment", true);
+            this.startActivityForResult(intent, CartUtil.SHIPPING_REQUEST_CODE);
+            return false;
+        }
+    }
+    
+    private void setPayPal(PayPal paypal){
+        if (paypal != null) {
+            paymentViewHolder.creditText.setVisibility(View.INVISIBLE);
+            paymentViewHolder.cardLayout.setVisibility(View.VISIBLE);
+            paymentViewHolder.cardNumber.setText("");
+            setBillAddressMessage(paypal);
+        } else {
+            paymentViewHolder.cardLayout.setVisibility(View.GONE);
+            paymentViewHolder.creditText.setVisibility(View.VISIBLE);
+        }
+    }
+    private boolean setBillAddressMessage(Info info
+            ) {
+        if (info != null) {
+            String message = "<br>"+info.getLine1() + "</br><br>" + info.getLine2() + "</br><br>" + info.getLine3()
+                    + "</br><br>" + info.getLine4() + "</br><br>" + info.getLine5();
+            paymentViewHolder.billName.setText(Html.fromHtml(message));
+            return true;
+        } else
+            return false;
+
+    }
+
+    private boolean setCreditCardMessage(CreditCard card) {
+        if (card != null) {
+            paymentViewHolder.creditText.setVisibility(View.INVISIBLE);
+            paymentViewHolder.cardLayout.setVisibility(View.VISIBLE);
+            String message = card.CardNumber + "\n" + card.CardTypeName;
+            paymentViewHolder.cardNumber.setText(message);
+            return true;
+        } else {
+            paymentViewHolder.cardLayout.setVisibility(View.GONE);
+            paymentViewHolder.creditText.setVisibility(View.VISIBLE);
+            return false;
+        }
+
+    }
+    
+    private void showShippingRestriction(
+            ArrayList<ShippingRestrictionItem> srList,boolean isNeedInit) {
+        if (srList == null || srList.size() == 0) {
+            if(isNeedInit){
+                init();
+            } 
+        } else {
+
+            final ShippingRestrictionItem sr = srList.get(0);
+
+            android.content.DialogInterface.OnClickListener leftListener = new android.content.DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent intent = new Intent(ReviewListActivity.this, CustomerInfoActivity.class);
+                    intent.putExtra("isFromCartPage", true);
+                    intent.putExtra("title", "Address Book");
+                    intent.putExtra("selectedAddressId", cartUtil.getSelectedAddressId());
+                    intent.putExtra("requestCode", CartUtil.SHIPPING_REQUEST_CODE);
+                    startActivityForResult(intent, CartUtil.SHIPPING_REQUEST_CODE);
+                }
+
+            };
+            android.content.DialogInterface.OnClickListener rightListener = new android.content.DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Map<String, String> param = new HashMap<String, String>();
+                    if ("0".equals(sr.Id)){
+                    	param.put("SkuCode", sr.SKU);
+                    	param.put("Activity", "ReviewListActivity");
+                    	Task task = new Task(Config.TASK_REMOVE_CART_SAMPLE_ITEM, param);
+                    	task.setExcutor(new RemoveCartSampleItemExecutor());
+                    	MainService.addNewTask(task,ReviewListActivity.this);
+                    	showProgress();
+                    }else{
+                    	param.put("CART_ITEM_ID", sr.Id);
+                    	Task task = new Task(Config.TASK_REMOVE_CART_IN_PAYMENT, param);
+                    	task.setExcutor(ExecutorFactory.getOperateCartItemExecutor(param));
+                    	MainService.addNewTask(task,ReviewListActivity.this);
+                    	showProgress();
+                    }
+                }
+
+            };
+            DialogUtil.TwoButtonShowMessageDialog(this, R.string.sr_title,
+                    sr.ShippingRestrictionMessage, leftListener, R.string.sr_change_address,
+                    rightListener, R.string.sr_remove);
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+
+        switch (resultCode) {
+            case Config.TASK_CUSTOMER_SELECT_ADDRESS:
+                isOnlyNeedCheckCVV2 = true;
+                isOnlyPaymentChange = true;
+                address = (CustomerAddress)intent.getSerializableExtra("address");
+                refresh(Config.TASK_CUSTOMER_SELECT_ADDRESS,address);
+                requestPaymentInfo();
+                requestReviewOrderInfo();
+                showProgress();
+                break;
+            case Config.TASK_CUSTOMER_EDIT_BILLING_ADDRESS:
+            	bill = (CustomerAddress)intent.getSerializableExtra("CustomerAddress");
+                //refresh(Config.TASK_CUSTOMER_SELECT_CREDITCARD, card);
+                isOnlyNeedCheckCVV2 = true;
+                isOnlyPaymentChange = false;
+                requestPaymentInfo();
+                showProgress();
+                break;
+            case Config.TASK_CUSTOMER_SELECT_CREDITCARD:
+                if(hasCard){
+                    CreditCard card = (CreditCard) intent.getSerializableExtra("card");
+                    refresh(Config.TASK_CUSTOMER_SELECT_CREDITCARD, card);
+                    isOnlyNeedCheckCVV2 = true;
+                    isOnlyPaymentChange = true;
+                }else{
+                    showProgress();
+                }
+                requestPaymentInfo();
+                break;
+            case CartUtil.CHECK_CVV2:
+                isOnlyPaymentChange = true;
+                requestPaymentInfo();
+                showProgress();
+                break;
+            case CartUtil.SHIPPING_REQUEST_CODE:
+            case CartUtil.CARD_REQUEST_CODE:
+            case Config.TASK_PAYPAL_CHECKOUT:
+                requestPaymentInfo();
+                showProgress();
+                break;
+
+        }
+        
+    }
+    
+    
+    @Override
+    public void excute(BaseActivity act, ResponseResult result, int flag) {
+        switch(flag){
+            case Config.TASK_GET_REVIEW_PROMO_IN_REVIEW:
+            case Config.TASK_GET_REVIEW_PROMO_REAPPLY_IN_REVIW:
+            case Config.TASK_DEL_PROMOCODE_IN_REVIEW:
+                cartUtil.dealwithResponseResult(this,flag);
+                break;
+            case Config.TASK_GET_REVIEW_CHECKOUT:
+            	CartButtonEnabledActivity.getCartQuantity();
+                
+                ReviewAppUtil.recourdOrderTimes();
+                Intent intent = new Intent(this, OrderDetailDisplayActivity.class);
+                intent.putExtra("orderId", result.OrderId);
+                intent.putExtra("isFromCompletedOrder", true);
+                startActivity(intent);
+                break;
+            case Config.TASK_REMOVE_CART_SAMPLE_ITEM:
+            case Config.TASK_REMOVE_CART_IN_PAYMENT:
+            	CartButtonEnabledActivity.getCartQuantity();
+                srList.remove(0);
+                showShippingRestriction(srList,true);
+                break;
+        }
+    }
+
+    @Override
+    public boolean failedExcution(BaseActivity act, ResponseResult result, int flag) {
+        boolean isHandled = false;
+        switch(flag){
+            case Config.TASK_GET_REVIEW_CHECKOUT:
+                
+            	if (result.MessageCode != null && !result.MessageCode.equals("")
+            		&& !result.MessageCode.equals("0")){
+            		diapersOrderLogic(result);
+            		isHandled = true;
+            	}else if(Util.parseBoolean(result.IsNeedCVV2Hopup)){
+                    gotoCvv2(card,bill,true);
+                    isHandled = true;
+                }
+                break;
+            case Config.TASK_GET_REVIEW_PROMO_IN_REVIEW:
+            case Config.TASK_GET_REVIEW_PROMO_REAPPLY_IN_REVIW:
+            case Config.TASK_DEL_PROMOCODE_IN_REVIEW:
+                if(result.ErrorCode != null){
+                    DialogUtil.OneButtonShowMessageDialog(act, result.ErrorMessage);
+                }else if(!Util.isRequestSuccess(result)){
+                    DialogUtil.OneButtonShowMessageDialog(act, result.Message);
+                }
+                isHandled = true;
+                break;
+            case Config.TASK_GET_REVIEW_ALL:
+                DialogUtil.OneButtonShowMessageDialog(this,
+                        R.string.require_failed, flag, null);
+                isHandled = true;
+                break;
+        }
+        return isHandled;
+    }
+
+    public void setViewEnable(boolean isEnable){
+        if (checkOutButton != null){
+            checkOutButton.setEnabled(isEnable);
+        }
+    }
+    
+    public void requestCallback(){
+        setViewEnable(true);
+    }
+   
+}

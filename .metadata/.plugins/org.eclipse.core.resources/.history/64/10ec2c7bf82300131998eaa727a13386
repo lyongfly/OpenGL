@@ -1,0 +1,236 @@
+
+package com.suryani.activity.cart;
+
+import com.quidsi.activity.CartButtonEnabledActivity;
+import com.quidsi.activity.NavigationActivity;
+import com.suryani.R;
+import com.suryani.activity.BaseActivity;
+import com.suryani.activity.LoginActivity;
+import com.suryani.adapter.cart.CreditCardAdapter;
+import com.suryani.logic.MainService;
+import com.suryani.logic.Task;
+import com.suryani.model.CreditCard;
+import com.suryani.model.CustomerAddress;
+import com.suryani.model.ResponseResult;
+import com.suryani.model.infer.CartActionExcution;
+import com.suryani.util.Config;
+import com.suryani.util.Util;
+import com.suryani.volley.executor.impl.cart.GetCustomerInfoExecutor;
+import com.suryani.volley.executor.impl.cart.SelectCreditCardExecutor;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.ListView;
+
+import java.util.HashMap;
+import java.util.List;
+
+public class PaymentInfoActivity extends NavigationActivity implements CartActionExcution {
+
+    private ListView listview;
+    private CreditCardAdapter adapter;
+    private boolean isNeedreFresh = false;
+    private boolean isAddCard = false;
+    private boolean isFromCVV2 = false;
+    private boolean hasCard = true;
+    private boolean hasPayPal;
+    CreditCard card_selected;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getLayoutInflater().inflate(R.layout.payment_info_layout, mMainLayout);
+        actionBar.setTitle(R.string.payment_info);
+        listview = (ListView) findViewById(R.id.listview);
+        isFromCVV2 = getIntent().getBooleanExtra("isFromCVV2", false);
+        hasCard = getIntent().getBooleanExtra("hasCard", false);
+        hasPayPal = getIntent().getBooleanExtra("hasPayPal", false);
+        initButtons();
+        init();
+    }
+
+    private void initButtons() {
+
+        final Button add_new_cc_btn = (Button) findViewById(R.id.add_new_cc_btn);
+        final Button pay_with_paypal_btn = (Button) findViewById(R.id.pay_with_paypal_btn);
+        OnClickListener listener = new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if (v == add_new_cc_btn) {
+                    Intent intent = new Intent(PaymentInfoActivity.this,
+                            NewCreateCardActivity.class);
+                    intent.putExtra("isFromPaymentInfo", true);
+                    startActivityForResult(intent, 1);
+                } else if (v == pay_with_paypal_btn) {
+                    Intent i = new Intent(PaymentInfoActivity.this, WebViewActivity.class);
+                    i.putExtra("ispaypal", true);
+                    startActivityForResult(i,0);
+                }
+
+            }
+        };
+        
+        add_new_cc_btn.setOnClickListener(listener);
+        pay_with_paypal_btn.setOnClickListener(listener);
+    }
+
+    @Override
+    public void init() {
+        Task task = new Task(Config.TASK_CUSTOMER_INFO_CC, null);
+        task.setExcutor(new GetCustomerInfoExecutor());
+        MainService.addNewTask(task,this);
+        showProgress();
+    }
+
+    @SuppressWarnings({
+            "rawtypes", "unchecked"
+    })
+    @Override
+    public void refresh(Object... param) {
+
+        int flag = (Integer) param[0];
+
+        if (!isNeedreFresh)
+            dismissProgress();
+
+        switch (flag) {
+            case Config.TASK_CUSTOMER_INFO_CC:
+                if (param[1] instanceof ResponseResult) {//LoginActivity.FROM_PAYMENT_FLAG
+                   Util.dealResponseResult(this, (ResponseResult) param[1], this, LoginActivity.FROM_PAYMENT_FLAG);
+                }else{
+                    List list = (List) param[1];
+                    if (list != null)
+                        initListView(list);
+                }
+                break;
+            case Config.TASK_CUSTOMER_SELECT_CREDITCARD:
+                ResponseResult result = (ResponseResult) param[1];
+                Util.dealResponseResult(this, result, this,
+                        LoginActivity.FROM_PAYMENT_FLAG);
+                break;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initListView(List<List<?>> list) {
+        CustomerInfoActivity.shippingList = (List<CustomerAddress>) list.get(1);
+        CustomerInfoActivity.billList = (List<CustomerAddress>) list.get(2);
+        CustomerInfoActivity.cardList = (List<CreditCard>) list.get(3);
+        if(CustomerInfoActivity.cardList != null && CustomerInfoActivity.cardList.size() != 0){
+            if (adapter == null) {
+                adapter = new CreditCardAdapter(this);
+                adapter.setList(CustomerInfoActivity.cardList);
+                adapter.setAddressList(CustomerInfoActivity.billList);
+                listview.setAdapter(adapter);
+                //card_selected
+                listview.setOnItemClickListener(new OnItemClickListener() {
+
+                    @Override
+                    public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+                        card_selected = (CreditCard) adapter.getItem(arg2);
+                        if(Util.parseBoolean(card_selected.IsPrimary) && !hasPayPal){
+                            setResult(PaymentInfoActivity.this);
+                        }else
+                           selectCreditCard(card_selected.CreditCardId);
+                    }
+                });
+            }else{
+                adapter.setAddressList(CustomerInfoActivity.billList);
+                adapter.setList(CustomerInfoActivity.cardList);
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int a_requestCode, int a_resultCode, Intent data) {
+        switch (a_resultCode) {
+            case Config.TASK_ADD_CREDITECARD:
+                isAddCard = true;
+                if(hasCard){
+                    isNeedreFresh = true;
+                    CharSequence creditCardId = data.getCharSequenceExtra("cardId");
+                    selectCreditCard(creditCardId.toString());
+                }else{
+                    init();
+                }
+                break;
+            case Config.TASK_PAYPAL_CHECKOUT:
+                setResult(this,Config.TASK_PAYPAL_CHECKOUT);
+                break;
+        }
+    }
+
+    private void selectCreditCard(String creditCardId) {
+        HashMap<String, Object> map0 = new HashMap<String, Object>();
+        map0.put("creditCardId", creditCardId);
+        Task task0 = new Task(Config.TASK_CUSTOMER_SELECT_CREDITCARD, map0);
+        task0.setExcutor(new SelectCreditCardExecutor());
+        MainService.addNewTask(task0,this);
+        showProgress();
+    }
+
+    private CreditCard getSelectedCard() {
+        CreditCard card_selected = null;
+        for (CreditCard card : CustomerInfoActivity.cardList) {
+
+            if (Util.parseBoolean(card.IsPrimary))
+                card_selected = card;
+        }
+        return card_selected;
+    }
+
+    @Override
+    public void excute(BaseActivity act, ResponseResult result, int flag) {
+        if (isNeedreFresh) {
+            init();
+            isNeedreFresh = false;
+        } else {
+            setResult(act);
+        }
+    }
+
+    protected void setResult(BaseActivity act) {
+        setResult(act,Config.TASK_CUSTOMER_SELECT_CREDITCARD);
+    }
+    
+    @SuppressWarnings("rawtypes")
+    protected void setResult(BaseActivity act, int actionFlag) {
+        Intent intent = new Intent();
+        Class clazz = ReviewListActivity.class;
+        if (isFromCVV2) {
+            clazz = CVV2Activity.class;
+        }
+        intent.setClass(act, clazz);
+        if(card_selected != null)
+           intent.putExtra("card", card_selected);
+        setResult(actionFlag, intent);
+        finish();
+
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if (isAddCard) {
+
+            card_selected = getSelectedCard();
+            setResult(this);
+           
+        } else
+            super.onBackPressed();
+    }
+
+    @Override
+    public boolean failedExcution(BaseActivity act, ResponseResult result, int flag) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    
+}
