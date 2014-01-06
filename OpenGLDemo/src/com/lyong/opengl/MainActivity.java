@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
         myGlSurfaceView.setRenderer(myRenderer);
         
         //myGlSurfaceView.setRenderer(new MyRenderer());
+        //myGlSurfaceView.setRenderer(new MyRenderer());
         //GLSurfaceView.RENDERMODE_CONTINUOUSLY 持续渲染（默认）
         //GLSurfaceView.RENDERMODE_WHEN_DIRTY 脏渲染，命令渲染
         myGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);

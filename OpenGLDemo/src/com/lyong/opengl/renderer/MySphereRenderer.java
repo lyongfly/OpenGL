@@ -38,7 +38,7 @@ public class MySphereRenderer extends AbstractRenderer {
         float stackStep = (float) (Math.PI / statck) ;//单位角度值
         
         int slice = 20 ;
-        float sliceStep = (float) Math.PI /slice ;//水平圆递增的角度
+        float sliceStep = (float) (Math.PI /slice) ;//水平圆递增的角度
         
         float r0 ,r1,y0,y1,x0,x1,z0,z1;
         
