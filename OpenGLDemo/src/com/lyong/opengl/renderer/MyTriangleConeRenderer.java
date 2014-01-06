@@ -1,6 +1,6 @@
 package com.lyong.opengl.renderer;
 
-import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,7 +128,7 @@ public class MyTriangleConeRenderer extends AbstractRenderer {
             colorList.add(1f); //a
         }
         
-        ByteBuffer colorBufffer = BufferUtil.list2ByteBuffer(colorList);
+        FloatBuffer colorBufffer = BufferUtil.list2FloatBuffer(colorList);
         //颜色缓冲区
         gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorBufffer);
         //指定顶点指针

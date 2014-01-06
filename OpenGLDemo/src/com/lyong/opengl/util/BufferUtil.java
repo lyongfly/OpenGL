@@ -46,4 +46,23 @@ public class BufferUtil {
         return ibb;
     }
     
+    /**
+     * 将list集合转换成字节缓冲区
+     * @param arr
+     * @return
+     */
+    public static FloatBuffer list2FloatBuffer(List<Float> arr){
+       
+        ByteBuffer ibb = ByteBuffer.allocateDirect(arr.size() * 4);
+        ibb.order(ByteOrder.nativeOrder());
+        FloatBuffer fbb = ibb.asFloatBuffer();
+        for(float f : arr){
+            fbb.put(f);
+        }
+        //指定顶点指针
+        fbb.position(0);
+        return fbb;
+    }
+    
+    
 }

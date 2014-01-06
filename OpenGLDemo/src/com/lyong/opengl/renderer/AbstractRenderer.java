@@ -8,8 +8,8 @@ import android.opengl.GLSurfaceView.Renderer;
 public abstract class AbstractRenderer implements Renderer {
 
     public float ratio;
-    public float xrotate;
-    public float yrotate;
+    public float xrotate = 0f;
+    public float yrotate = 0f;
     
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
