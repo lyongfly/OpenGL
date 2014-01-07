@@ -1,17 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
-<fullyQualifiedTypeName name="com.suryani.activity.pdp.ProductOptionColorCompare"/>
-<fullyQualifiedTypeName name="com.suryani.volley.executor.impl.AddMultiplyItemToCartExecutor"/>
-<fullyQualifiedTypeName name="com.suryani.volley.executor.impl.GetAmazonSummaryExecutor"/>
-<fullyQualifiedTypeName name="com.suryani.logic.Task"/>
-<fullyQualifiedTypeName name="com.suryani.xml.response.ProductResponse"/>
-<fullyQualifiedTypeName name="com.suryani.volley.executor.impl.GetReviewListExecutor"/>
-<fullyQualifiedTypeName name="com.suryani.activity.pdp.ProductReviewActivity"/>
-<fullyQualifiedTypeName name="com.suryani.volley.executor.impl.GetCartQuanityExecutor"/>
-<fullyQualifiedTypeName name="com.suryani.activity.BaseActivity"/>
-<fullyQualifiedTypeName name="com.suryani.activity.BaseHomeActivity"/>
-<fullyQualifiedTypeName name="com.suryani.activity.LoginActivity"/>
-<fullyQualifiedTypeName name="com.suryani.volley.executor.impl.UserLogOutExecutor"/>
 <fullyQualifiedTypeName name="com.suryani.logic.SessionRequest"/>
 <fullyQualifiedTypeName name="com.quidsi.activity.GlobalActionsActivity"/>
 <fullyQualifiedTypeName name="android.app.Activity"/>
@@ -60,4 +48,16 @@
 <fullyQualifiedTypeName name="com.quidsi.activity.NavigationActivity"/>
 <fullyQualifiedTypeName name="com.suryani.activity.cart.CartPageActivity"/>
 <fullyQualifiedTypeName name="com.suryani.activity.cart.PaymentInfoActivity"/>
+<fullyQualifiedTypeName name="android.opengl.GLSurfaceView.Renderer"/>
+<fullyQualifiedTypeName name="com.lyong.opengl.MainActivity.MyRenderer"/>
+<fullyQualifiedTypeName name="javax.microedition.khronos.opengles.GL"/>
+<fullyQualifiedTypeName name="java.nio.ByteBuffer"/>
+<fullyQualifiedTypeName name="java.nio.ByteOrder"/>
+<fullyQualifiedTypeName name="java.util.ArrayList"/>
+<fullyQualifiedTypeName name="java.nio.FloatBuffer"/>
+<fullyQualifiedTypeName name="com.lyong.opengl.util.BufferUtil"/>
+<fullyQualifiedTypeName name="android.util.FloatMath"/>
+<fullyQualifiedTypeName name="javax.microedition.khronos.opengles.GL10"/>
+<fullyQualifiedTypeName name="android.opengl.GLU"/>
+<fullyQualifiedTypeName name="java.lang.Math"/>
 </qualifiedTypeNameHistroy>

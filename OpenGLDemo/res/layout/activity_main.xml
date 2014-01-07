@@ -4,11 +4,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <com.lyong.opengl.view.MyGLSurfaceView
-        android:id="@+id/myGLSurfaceView"
+    <LinearLayout
+        android:id="@+id/glSurfaceView_holder"
         android:layout_width="match_parent"
         android:layout_height="0dip"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:orientation="vertical"/>
     
     <LinearLayout 
         android:layout_width="match_parent"

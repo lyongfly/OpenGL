@@ -25,4 +25,9 @@
 <workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1380003509735_21" label="Window Working Set" name="Aggregate for window 1380003509735"/>
 <workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1388558019811_22" label="Window Working Set" name="Aggregate for window 1388558019811"/>
 <workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1388625496391_23" label="Window Working Set" name="Aggregate for window 1388625496391"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1388640871367_24" label="Window Working Set" name="Aggregate for window 1388640871367"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1388986744328_25" label="Window Working Set" name="Aggregate for window 1388986744328"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1388987561250_26" label="Window Working Set" name="Aggregate for window 1388987561249"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1389059611330_27" label="Window Working Set" name="Aggregate for window 1389059611330"/>
+<mruList name="OpenGL"/>
 </workingSetManager>
