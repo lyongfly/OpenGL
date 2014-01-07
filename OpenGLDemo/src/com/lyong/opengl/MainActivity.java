@@ -13,22 +13,44 @@ import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
 import com.lyong.opengl.renderer.AbstractRenderer;
-import com.lyong.opengl.renderer.MySphereRenderer;
+import com.lyong.opengl.renderer.MyRingRenderer;
 import com.lyong.opengl.view.MyGLSurfaceView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnClickListener {
 
     private AbstractRenderer myRenderer;
     private MyGLSurfaceView myGlSurfaceView;
+    
+    private Button btnUp,btnDown,btnRight,btnLeft;
+    private LinearLayout mGlSurfaceViewHolder;
+    float step = 5f ;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        setContentView(R.layout.activity_main);
+        
+        mGlSurfaceViewHolder = (LinearLayout) this.findViewById(R.id.glSurfaceView_holder);
+        btnUp = (Button) this.findViewById(R.id.btn_up);
+        btnDown = (Button) this.findViewById(R.id.btn_down);
+        btnRight = (Button) this.findViewById(R.id.btn_right);
+        btnLeft = (Button) this.findViewById(R.id.btn_left);
+        
+        btnUp.setOnClickListener(this);
+        btnDown.setOnClickListener(this);
+        btnRight.setOnClickListener(this);
+        btnLeft.setOnClickListener(this);
+        
+        
         myGlSurfaceView = new MyGLSurfaceView(this);
-        myRenderer = new MySphereRenderer();
+        myRenderer = new MyRingRenderer();
         
         //myGlSurfaceView.setEGLConfigChooser(5, 6, 5, 0, 16, 4);
         myGlSurfaceView.setRenderer(myRenderer);
@@ -37,8 +59,12 @@ public class MainActivity extends Activity {
         //myGlSurfaceView.setRenderer(new MyRenderer());
         //GLSurfaceView.RENDERMODE_CONTINUOUSLY 持续渲染（默认）
         //GLSurfaceView.RENDERMODE_WHEN_DIRTY 脏渲染，命令渲染
-        myGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
-        setContentView(myGlSurfaceView);
+        myGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        
+        mGlSurfaceViewHolder.addView(myGlSurfaceView);
+        
+        
+        
     }
 
   //自定义渲染器
@@ -150,10 +176,40 @@ public class MainActivity extends Activity {
                 break;
         }
         
-        //请求渲染和咱渲染配合使用
+        return super.onKeyDown(keyCode, event);
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_up:
+                
+                myRenderer.xrotate = myRenderer.xrotate - step ;
+                
+                break;
+            case R.id.btn_down:
+
+                myRenderer.xrotate = myRenderer.xrotate + step ;
+                
+                break;
+            case R.id.btn_left:
+
+                myRenderer.yrotate = myRenderer.yrotate - step ;
+                
+                break;
+            case R.id.btn_right:
+
+                myRenderer.yrotate = myRenderer.yrotate + step ;
+                
+                break;
+
+            default:
+                break;
+        }
+        //请求渲染和脏渲染配合使用
         myGlSurfaceView.requestRender();
         
-        return super.onKeyDown(keyCode, event);
     }
     
 }
