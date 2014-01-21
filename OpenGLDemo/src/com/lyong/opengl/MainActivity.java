@@ -19,7 +19,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 
 import com.lyong.opengl.renderer.AbstractRenderer;
-import com.lyong.opengl.renderer.MyRingRenderer;
+import com.lyong.opengl.renderer.MyLightingRenderer;
 import com.lyong.opengl.view.MyGLSurfaceView;
 
 public class MainActivity extends Activity implements OnClickListener {
@@ -50,7 +50,8 @@ public class MainActivity extends Activity implements OnClickListener {
         
         
         myGlSurfaceView = new MyGLSurfaceView(this);
-        myRenderer = new MyRingRenderer();
+        
+        myRenderer = new MyLightingRenderer();
         
         //myGlSurfaceView.setEGLConfigChooser(5, 6, 5, 0, 16, 4);
         myGlSurfaceView.setRenderer(myRenderer);
